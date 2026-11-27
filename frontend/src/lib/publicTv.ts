@@ -21,6 +21,16 @@ export interface TvH2hRound {
 }
 
 /**
+ * The head-to-head round the TV follows: the first in the competition's
+ * order among those in progress, so it doesn't switch whenever a room
+ * moves to its next group
+ */
+export const getFollowedH2hRoundId = (
+    liveRoundIds: string[],
+    h2hRoundIds: string[]
+) => h2hRoundIds.find((id) => liveRoundIds.includes(id)) ?? null;
+
+/**
  * The head-to-head round in progress, known from the WCIF, so it never
  * falls back to a results slide. Until its bracket loads (or while it
  * fails to) it has no playing matches, and the TV shows its bracket slide.

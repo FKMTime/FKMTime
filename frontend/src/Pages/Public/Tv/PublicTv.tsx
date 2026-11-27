@@ -21,6 +21,7 @@ import { getEventIconClass, getEventName, getEvents } from "@/lib/events";
 import { publicH2hQuery } from "@/lib/h2hPublic";
 import { StationInfo } from "@/lib/liveSolving";
 import {
+    getFollowedH2hRoundId,
     getTvH2hRounds,
     getTvSlides,
     getTvZoom,
@@ -82,8 +83,7 @@ const PublicTv = () => {
         () => getH2hRoundIds(competition?.wcif),
         [competition]
     );
-    const h2hRoundId =
-        liveRoundIds.find((id) => h2hRoundIds.includes(id)) ?? null;
+    const h2hRoundId = getFollowedH2hRoundId(liveRoundIds, h2hRoundIds);
     const h2hQuery = publicH2hQuery(h2hRoundId ?? "");
     const {
         data: h2hView,
@@ -192,7 +192,9 @@ const PublicTv = () => {
             TV_SLIDE_MS
         );
         return () => clearInterval(rotate);
-    }, [slides.length]);
+        // Restarted when the matches start or stop too, so the first slide
+        // after that gets its full time
+    }, [slides.length, isMatchPlaying]);
 
     useEffect(() => {
         const tick = setInterval(() => setNow(new Date()), 15_000);

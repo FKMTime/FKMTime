@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+    getFollowedH2hRoundId,
     getTvH2hRounds,
     getTvSlides,
     getTvZoom,
@@ -76,6 +77,17 @@ describe("public TV view", () => {
             { type: "live" },
             { type: "results", roundId: "333-r1" },
         ]);
+    });
+
+    it("follows the first head-to-head round in competition order, whatever the rooms' order", () => {
+        const h2h = ["333oh-r2", "222-r3"];
+        expect(getFollowedH2hRoundId(["222-r3", "333oh-r2"], h2h)).toBe(
+            "333oh-r2"
+        );
+        expect(getFollowedH2hRoundId(["333oh-r2", "222-r3"], h2h)).toBe(
+            "333oh-r2"
+        );
+        expect(getFollowedH2hRoundId(["333-r1"], h2h)).toBeNull();
     });
 
     it("takes the playing matches from the round's own bracket", () => {

@@ -1216,12 +1216,15 @@ slide.
   match gets a fresh scoreboard, and a competitor's timer is read only
   from their own station's packets.
 - **On phones** the scoreboard stacks the two competitors.
-- **TV.** The TV follows the first H2H round among the rounds in progress,
-  from the rooms' current groups, like its results slides. It doesn't
-  follow an H2H round that no room is running. Between matches the
-  bracket slide comes first in the rotation, so it's what shows when a
-  match ends. With two matches playing at once, their scoreboards take
-  turns.
+- **TV.** The TV follows one H2H round: of the rounds in progress (the
+  rooms' current groups, like its results slides), the first in the
+  competition's order. It doesn't follow an H2H round that no room is
+  running, and leaves any other H2H round out of the rotation rather than
+  rank it as an ordinary round. Between matches the bracket slide comes
+  first in the rotation, so it's what shows when a match ends. With two
+  matches playing at once, their scoreboards take turns. Until the
+  bracket loads the slide says so, and a bracket that failed to load is
+  fetched again every minute.
 - **Results.** The public results board, and the staff copy of it, rank an
   H2H round by the positions and stage reached from the public endpoint.
   While the bracket loads it says so, and if it fails it offers a retry.
