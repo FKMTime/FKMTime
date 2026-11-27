@@ -1,8 +1,13 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
+import { Competition } from "wcif-helpers";
 
-import { getActivePublicNavId } from "./publicNavigation";
+import {
+    getActivePublicNavId,
+    getH2hRoundIds,
+    getPublicTitle,
+} from "./publicNavigation";
 import PublicSidebar from "./PublicSidebar";
 import PublicTabs from "./PublicTabs";
 
@@ -15,6 +20,28 @@ describe("getActivePublicNavId", () => {
         expect(getActivePublicNavId("/public/live")).toBe("live");
         expect(getActivePublicNavId("/public/results")).toBe("results");
         expect(getActivePublicNavId("/public/results/333-r1")).toBe("results");
+        expect(getActivePublicNavId("/public/h2h/333oh-r2")).toBe(
+            "h2h-333oh-r2"
+        );
+    });
+});
+
+describe("getH2hRoundIds", () => {
+    it("finds the rounds in the head-to-head format", () => {
+        const wcif = {
+            events: [
+                { id: "333", rounds: [{ id: "333-r1", format: "a" }] },
+                {
+                    id: "333oh",
+                    rounds: [
+                        { id: "333oh-r1", format: "a" },
+                        { id: "333oh-r2", format: "h" },
+                    ],
+                },
+            ],
+        } as unknown as Competition;
+        expect(getH2hRoundIds(wcif)).toEqual(["333oh-r2"]);
+        expect(getH2hRoundIds(undefined)).toEqual([]);
     });
 });
 
@@ -42,6 +69,33 @@ describe("PublicSidebar", () => {
     });
 });
 
+describe("bracket links", () => {
+    it("adds a Bracket item after Results for a head-to-head round", () => {
+        renderAt(
+            "/public/h2h/333oh-r2",
+            <PublicSidebar liveRoundIds={[]} h2hRoundIds={["333oh-r2"]} />
+        );
+        const bracket = screen.getByRole("link", { name: "Bracket" });
+        expect(bracket.getAttribute("href")).toBe("/public/h2h/333oh-r2");
+        expect(bracket.getAttribute("aria-current")).toBe("page");
+        const names = screen.getAllByRole("link").map((l) => l.textContent);
+        expect(names.indexOf("Bracket")).toBe(names.indexOf("Results") + 1);
+    });
+
+    it("gives phones a Bracket tab, and nothing without such a round", () => {
+        const { unmount } = renderAt(
+            "/public/results/333oh-r2",
+            <PublicTabs h2hRoundIds={["333oh-r2"]} />
+        );
+        expect(
+            screen.getAllByRole("link").map((link) => link.textContent)
+        ).toEqual(["Live solving", "Results", "Bracket"]);
+        unmount();
+        renderAt("/public", <PublicTabs h2hRoundIds={[]} />);
+        expect(screen.queryByRole("link", { name: "Bracket" })).toBeNull();
+    });
+});
+
 describe("PublicTabs", () => {
     it("shows Live solving and Results with live solving active by default", () => {
         renderAt("/public", <PublicTabs />);
@@ -51,5 +105,31 @@ describe("PublicTabs", () => {
             "Results",
         ]);
         expect(links[0].getAttribute("aria-current")).toBe("page");
+    });
+});
+
+describe("getPublicTitle", () => {
+    it("names a bracket page before the competition has loaded", () => {
+        expect(getPublicTitle("/public/h2h/333oh-r2", [])).toBe("Bracket");
+        expect(getPublicTitle("/public/h2h/333oh-r2", ["333oh-r2"])).toBe(
+            "Bracket"
+        );
+        expect(getPublicTitle("/public/results/333-r1", [])).toBe("Results");
+        expect(getPublicTitle("/public", [])).toBe("Live solving");
+    });
+});
+
+describe("PublicTabs with several brackets", () => {
+    it("scrolls instead of squeezing the tabs below their labels", () => {
+        renderAt(
+            "/public",
+            <PublicTabs h2hRoundIds={["333oh-r2", "333bf-r2"]} />
+        );
+        const nav = screen.getByRole("navigation");
+        expect(nav.className).toContain("overflow-x-auto");
+        for (const link of screen.getAllByRole("link")) {
+            expect(link.className).toContain("shrink-0");
+            expect(link.className).toContain("whitespace-nowrap");
+        }
     });
 });

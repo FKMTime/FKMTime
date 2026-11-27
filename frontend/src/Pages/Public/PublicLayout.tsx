@@ -15,7 +15,12 @@ import { getEvents } from "@/lib/events";
 import { cn } from "@/lib/utils";
 import { socket } from "@/socket";
 
-import { isPublicResultsPath, PublicOutletContext } from "./publicNavigation";
+import {
+    getH2hRoundIds,
+    getPublicTitle,
+    isPublicResultsPath,
+    PublicOutletContext,
+} from "./publicNavigation";
 import PublicSidebar from "./PublicSidebar";
 import PublicTabs from "./PublicTabs";
 
@@ -47,6 +52,11 @@ const PublicLayout = () => {
     useRefetchOnReconnect();
     const [isLive, setIsLive] = useState(socket.connected);
     const isResults = isPublicResultsPath(location.pathname);
+    const h2hRoundIds = useMemo(
+        () => getH2hRoundIds(competition?.wcif),
+        [competition]
+    );
+    const title = getPublicTitle(location.pathname, h2hRoundIds);
 
     // Event names and icons are read from what getEvents stores, so they
     // must be in place before the competition renders anything
@@ -77,13 +87,16 @@ const PublicLayout = () => {
         };
     }, []);
 
-    useDocumentTitle(isResults ? "Results" : "Live solving", competition?.name);
+    useDocumentTitle(title, competition?.name);
 
     const outletContext: PublicOutletContext = { liveRoundIds };
 
     return (
         <div className="flex min-h-dvh">
-            <PublicSidebar liveRoundIds={liveRoundIds ?? []} />
+            <PublicSidebar
+                liveRoundIds={liveRoundIds ?? []}
+                h2hRoundIds={h2hRoundIds}
+            />
             <div className="flex min-w-0 flex-1 flex-col">
                 <header className="sticky top-0 z-10 flex flex-col border-b bg-background">
                     <div className="flex min-h-[62px] items-center gap-3 px-4 py-3 min-[760px]:px-7">
@@ -101,9 +114,7 @@ const PublicLayout = () => {
                                 {competition?.name}
                             </span>
                             <ChevronRight className="size-4 shrink-0 text-faint" />
-                            <h1 className="shrink-0 font-semibold">
-                                {isResults ? "Results" : "Live solving"}
-                            </h1>
+                            <h1 className="shrink-0 font-semibold">{title}</h1>
                         </div>
                         <span className="flex items-center gap-1.5 whitespace-nowrap text-[13px] text-muted-foreground">
                             <StatusDot
@@ -114,7 +125,7 @@ const PublicLayout = () => {
                         </span>
                         <ModeToggle className="size-[38px] shrink-0" />
                     </div>
-                    <PublicTabs />
+                    <PublicTabs h2hRoundIds={h2hRoundIds} />
                 </header>
                 <main
                     className={cn(

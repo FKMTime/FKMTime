@@ -10,6 +10,8 @@ import { H2hService } from './h2h.service';
 import { H2hExportService } from './h2hExport.service';
 import { H2hMatchService } from './h2hMatch.service';
 import { H2hMatchActionsService } from './h2hMatchActions.service';
+import { H2hPublicController } from './h2hPublic.controller';
+import { H2hPublicService } from './h2hPublic.service';
 
 @Module({
   providers: [
@@ -17,8 +19,9 @@ import { H2hMatchActionsService } from './h2hMatchActions.service';
     H2hMatchService,
     H2hMatchActionsService,
     H2hExportService,
+    H2hPublicService,
   ],
-  controllers: [H2hController],
+  controllers: [H2hPublicController, H2hController],
   imports: [
     forwardRef(() => AppModule),
     AttemptEditLogModule,

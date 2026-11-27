@@ -113,6 +113,10 @@ const ManualIncidents = lazy(
 const PublicLayout = lazy(() => import("./Pages/Public/PublicLayout"));
 const PublicTv = lazy(() => import("./Pages/Public/Tv/PublicTv"));
 const PublicResults = lazy(() => import("./Pages/Public/PublicResults"));
+const PublicH2hBracket = lazy(
+    () => import("./Pages/Public/H2h/PublicH2hBracket")
+);
+const PublicH2hMatch = lazy(() => import("./Pages/Public/H2h/PublicH2hMatch"));
 const PublicLiveSolving = lazy(
     () => import("./Pages/Public/PublicLiveSolving")
 );
@@ -310,6 +314,11 @@ const App = () => {
             errorElement: <ErrorPage />,
         },
         {
+            path: "/public/h2h/:roundId/match/:matchNumber",
+            element: <PublicH2hMatch />,
+            errorElement: <ErrorPage />,
+        },
+        {
             path: "/public",
             element: <PublicLayout />,
             errorElement: <ErrorPage />,
@@ -329,6 +338,10 @@ const App = () => {
                 {
                     path: "results/:id",
                     element: <PublicResults />,
+                },
+                {
+                    path: "h2h/:roundId",
+                    element: <PublicH2hBracket />,
                 },
             ],
         },
