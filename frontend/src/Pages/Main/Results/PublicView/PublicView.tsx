@@ -54,7 +54,11 @@ const PublicView = () => {
             .flatMap((event) => event.rounds)
             .find((round) => round.id === roundId)?.format === "h";
     const h2hQuery = publicH2hQuery(roundId);
-    const { data: h2h } = useLiveQuery(h2hQuery, { enabled: isH2h });
+    const {
+        data: h2h,
+        error: h2hError,
+        refetch: refetchH2h,
+    } = useLiveQuery(h2hQuery, { enabled: isH2h });
     useSocketRoom(isH2h ? "H2h" : null, {
         params: { roundId },
         invalidateOn: { h2hUpdated: [h2hQuery.key] },
@@ -100,6 +104,8 @@ const PublicView = () => {
                 liveRoundIds={liveRoundIds ?? []}
                 onRoundChange={(id) => navigate(`/results/public/${id}`)}
                 h2h={isH2h ? h2h : null}
+                h2hError={isH2h ? h2hError : null}
+                onRetryH2h={() => void refetchH2h()}
                 bracketHref={publicH2hPath(roundId)}
             />
         </>

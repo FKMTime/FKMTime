@@ -50,6 +50,17 @@ export const getPublicNavItems = (h2hRoundIds: string[]): PublicNavItem[] => [
     })),
 ];
 
+/**
+ * The page's name for the header and the tab title. A bracket is named
+ * before the competition loads, which is what lists the bracket items.
+ */
+export const getPublicTitle = (pathname: string, h2hRoundIds: string[]) => {
+    const activeId = getActivePublicNavId(pathname);
+    const item = getPublicNavItems(h2hRoundIds).find((i) => i.id === activeId);
+    if (item) return item.label;
+    return activeId.startsWith("h2h-") ? "Bracket" : "Live solving";
+};
+
 export const isPublicResultsPath = (pathname: string) =>
     pathname.startsWith("/public/results");
 

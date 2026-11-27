@@ -3,7 +3,11 @@ import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 import { Competition } from "wcif-helpers";
 
-import { getActivePublicNavId, getH2hRoundIds } from "./publicNavigation";
+import {
+    getActivePublicNavId,
+    getH2hRoundIds,
+    getPublicTitle,
+} from "./publicNavigation";
 import PublicSidebar from "./PublicSidebar";
 import PublicTabs from "./PublicTabs";
 
@@ -101,5 +105,31 @@ describe("PublicTabs", () => {
             "Results",
         ]);
         expect(links[0].getAttribute("aria-current")).toBe("page");
+    });
+});
+
+describe("getPublicTitle", () => {
+    it("names a bracket page before the competition has loaded", () => {
+        expect(getPublicTitle("/public/h2h/333oh-r2", [])).toBe("Bracket");
+        expect(getPublicTitle("/public/h2h/333oh-r2", ["333oh-r2"])).toBe(
+            "Bracket"
+        );
+        expect(getPublicTitle("/public/results/333-r1", [])).toBe("Results");
+        expect(getPublicTitle("/public", [])).toBe("Live solving");
+    });
+});
+
+describe("PublicTabs with several brackets", () => {
+    it("scrolls instead of squeezing the tabs below their labels", () => {
+        renderAt(
+            "/public",
+            <PublicTabs h2hRoundIds={["333oh-r2", "333bf-r2"]} />
+        );
+        const nav = screen.getByRole("navigation");
+        expect(nav.className).toContain("overflow-x-auto");
+        for (const link of screen.getAllByRole("link")) {
+            expect(link.className).toContain("shrink-0");
+            expect(link.className).toContain("whitespace-nowrap");
+        }
     });
 });

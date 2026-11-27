@@ -306,6 +306,9 @@ const PublicTv = () => {
                     h2hView &&
                     h2hMatch && (
                         <H2hScoreboard
+                            // A fresh scoreboard per match: nothing of the
+                            // last one may light up or time this one
+                            key={h2hMatch.id}
                             view={h2hView}
                             match={h2hMatch}
                             stations={Array.from(stations.values())}

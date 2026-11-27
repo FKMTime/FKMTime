@@ -6,12 +6,14 @@ import { H2hSideName } from "@/lib/h2h";
 import {
     entrantOf,
     h2hTimeText,
+    isLaterPoint,
     lastDecidedPoint,
     latestPoint,
     matchFormatText,
     matchOutcome,
     PointMarker,
     pointMarkers,
+    PointPlace,
     PublicH2hMatch,
     PublicH2hView,
     sideOf,
@@ -56,7 +58,12 @@ const SideTime = ({
     lastTime: string | null;
 }) =>
     station ? (
-        <StationTime station={station} lastTime={lastTime} />
+        // A new station starts its own timer, with no packet of another's
+        <StationTime
+            key={station.espId}
+            station={station}
+            lastTime={lastTime}
+        />
     ) : (
         <TimeText text={lastTime} live={false} />
     );
@@ -82,7 +89,7 @@ const TimeText = ({ text, live }: { text: string | null; live: boolean }) => (
     <p
         data-live={live ? "true" : undefined}
         className={cn(
-            "font-mono text-5xl font-bold tabular-nums",
+            "font-mono text-3xl font-bold tabular-nums min-[760px]:text-5xl",
             live ? "text-primary" : "text-foreground",
             text === null && "text-muted-foreground"
         )}
@@ -116,7 +123,7 @@ const SidePanel = ({
             aria-label={slotText(view, slot)}
             data-lit={isLit ? "true" : undefined}
             className={cn(
-                "flex flex-col gap-5 rounded-2xl border bg-card p-6 transition-colors duration-300",
+                "flex flex-col gap-4 rounded-2xl border bg-card p-4 transition-colors duration-300 min-[760px]:gap-5 min-[760px]:p-6",
                 isLit && "border-success bg-success-soft ring-4 ring-success",
                 isLoser && "opacity-60"
             )}
@@ -132,7 +139,7 @@ const SidePanel = ({
                 )}
                 <h2
                     className={cn(
-                        "min-w-0 flex-1 truncate text-3xl font-bold",
+                        "min-w-0 flex-1 truncate text-xl font-bold min-[760px]:text-3xl",
                         !entrant && "italic text-muted-foreground"
                     )}
                 >
@@ -142,7 +149,7 @@ const SidePanel = ({
             <div className="flex items-end justify-between gap-4">
                 <p
                     aria-label="Sets won"
-                    className="text-8xl font-bold leading-none tabular-nums"
+                    className="text-6xl font-bold leading-none tabular-nums min-[760px]:text-8xl"
                 >
                     {side === "A" ? match.score.a : match.score.b}
                 </p>
@@ -164,7 +171,11 @@ const SidePanel = ({
                             aria-label={`Set ${set.setNumber}`}
                             className="flex flex-wrap gap-1.5"
                         >
-                            {pointMarkers(set, side).map((marker, index) => (
+                            {pointMarkers(
+                                set,
+                                side,
+                                match.status === "IN_PROGRESS"
+                            ).map((marker, index) => (
                                 <li
                                     key={index}
                                     aria-label={`Point ${index + 1}: ${MARKER_TEXT[marker]}`}
@@ -189,15 +200,26 @@ const SidePanel = ({
  */
 const useLitSide = (match: PublicH2hMatch) => {
     const last = lastDecidedPoint(match);
-    const key = last
-        ? `${match.matchNumber}-${last.setNumber}-${last.point.pointNumber}`
-        : null;
+    const place: PointPlace = {
+        matchNumber: match.matchNumber,
+        setNumber: last?.setNumber ?? 0,
+        pointNumber: last?.point.pointNumber ?? 0,
+    };
     const [lit, setLit] = useState<{
-        key: string | null;
+        seen: PointPlace;
         side: H2hSideName | null;
-    }>({ key, side: null });
-    if (lit.key !== key) {
-        setLit({ key, side: last?.point.winnerSide ?? null });
+    }>({ seen: place, side: null });
+    const isSeen =
+        lit.seen.matchNumber === place.matchNumber &&
+        lit.seen.setNumber === place.setNumber &&
+        lit.seen.pointNumber === place.pointNumber;
+    if (!isSeen) {
+        setLit({
+            seen: place,
+            side: isLaterPoint(place, lit.seen)
+                ? last?.point.winnerSide ?? null
+                : null,
+        });
     }
     useEffect(() => {
         if (!lit.side) return;
@@ -231,8 +253,10 @@ const H2hScoreboard = ({ view, match, stations }: H2hScoreboardProps) => {
     return (
         <div className="flex flex-col gap-6">
             <div className="flex flex-wrap items-baseline justify-between gap-3">
-                <h2 className="text-4xl font-bold">{match.label}</h2>
-                <p className="text-xl text-muted-foreground">
+                <h2 className="text-2xl font-bold min-[760px]:text-4xl">
+                    {match.label}
+                </h2>
+                <p className="text-base text-muted-foreground min-[760px]:text-xl">
                     {matchFormatText(match.setsToWin)}
                 </p>
             </div>
@@ -241,11 +265,13 @@ const H2hScoreboard = ({ view, match, stations }: H2hScoreboardProps) => {
                     role="status"
                     className="flex flex-col items-center gap-1 rounded-2xl bg-success-soft px-6 py-5 text-center text-success"
                 >
-                    <p className="text-4xl font-bold">
+                    <p className="text-2xl font-bold min-[760px]:text-4xl">
                         {outcome.winnerName} {outcome.how}
                     </p>
                     {outcome.next && (
-                        <p className="text-xl font-semibold">{outcome.next}</p>
+                        <p className="text-base font-semibold min-[760px]:text-xl">
+                            {outcome.next}
+                        </p>
                     )}
                 </div>
             )}
@@ -256,7 +282,10 @@ const H2hScoreboard = ({ view, match, stations }: H2hScoreboardProps) => {
                         : "Waiting for earlier matches"}
                 </p>
             ) : null}
-            <div className="grid grid-cols-2 gap-6">
+            <div
+                data-testid="scoreboard-sides"
+                className="grid grid-cols-1 gap-4 min-[760px]:grid-cols-2 min-[760px]:gap-6"
+            >
                 {(["A", "B"] as const).map((side) => (
                     <SidePanel
                         key={side}

@@ -4,6 +4,8 @@ import { Competition as WCIF, getNumberOfAttemptsForRound } from "wcif-helpers";
 
 import FlagIcon from "@/Components/Icons/FlagIcon";
 import EventChips from "@/Components/shared/EventChips";
+import RequestError from "@/Components/shared/RequestError";
+import SectionLoading from "@/Components/shared/SectionLoading";
 import SegmentedControl from "@/Components/shared/SegmentedControl";
 import { StatusDot } from "@/Components/shared/StatusBadge";
 import { Button } from "@/Components/ui/button";
@@ -15,6 +17,7 @@ import {
 } from "@/lib/events";
 import { PublicH2hView } from "@/lib/h2hPublic";
 import { Result } from "@/lib/interfaces";
+import { QueryError } from "@/lib/queryCache";
 import { rankResults } from "@/lib/ranking";
 import {
     attemptWithPenaltyToString,
@@ -37,6 +40,9 @@ interface PublicResultsBoardProps {
      * replace the usual ranking; null while it loads or has none
      */
     h2h?: PublicH2hView | null;
+    /** Why the bracket didn't load; a 404 means the round has none yet */
+    h2hError?: unknown;
+    onRetryH2h?: () => void;
     /** Where the bracket of a head-to-head round opens */
     bracketHref?: string;
 }
@@ -52,6 +58,8 @@ const PublicResultsBoard = ({
     liveRoundIds,
     onRoundChange,
     h2h = null,
+    h2hError = null,
+    onRetryH2h = () => undefined,
     bracketHref,
 }: PublicResultsBoardProps) => {
     const eventId = roundId.split("-")[0];
@@ -64,6 +72,10 @@ const PublicResultsBoard = ({
     const rows = isH2h
         ? []
         : rankResults(results, maxAttempts, round?.format ?? "a");
+    const h2hMissing =
+        h2hError instanceof QueryError && h2hError.status === 404;
+    // Neither loaded nor known to be missing: nothing to count yet
+    const h2hPending = isH2h && !h2h && !h2hMissing;
     const competitorCount = isH2h ? h2h?.entrants.length ?? 0 : rows.length;
     const meta = roundId ? getRoundMeta(roundId, wcif) : null;
     const advancement = event ? getAdvancementText(roundId, event) : null;
@@ -71,7 +83,9 @@ const PublicResultsBoard = ({
         ? "In progress"
         : competitorCount
           ? `${competitorCount} ${competitorCount === 1 ? "competitor" : "competitors"}`
-          : "Not started";
+          : h2hPending
+            ? null
+            : "Not started";
 
     const pickEvent = (id: string) => {
         const rounds = wcif.events.find((e) => e.id === id)?.rounds ?? [];
@@ -150,10 +164,16 @@ const PublicResultsBoard = ({
                     {isH2h ? (
                         h2h && h2h.entrants.length > 0 ? (
                             <H2hResultsTable entrants={h2h.entrants} />
-                        ) : (
+                        ) : h2h || h2hMissing ? (
                             <p className="p-8 text-center text-sm text-muted-foreground">
                                 No results yet.
                             </p>
+                        ) : h2hError ? (
+                            <div className="p-4">
+                                <RequestError onRetry={onRetryH2h} />
+                            </div>
+                        ) : (
+                            <SectionLoading label="Loading results" />
                         )
                     ) : rows.length === 0 ? (
                         <p className="p-8 text-center text-sm text-muted-foreground">

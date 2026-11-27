@@ -103,12 +103,16 @@ const PublicH2hMatch = () => {
                 </header>
                 {view && match ? (
                     <H2hScoreboard
+                        key={match.id}
                         view={view}
                         match={match}
                         stations={stations}
                     />
-                ) : view ||
-                  (error instanceof QueryError && error.status === 404) ? (
+                ) : error instanceof QueryError && error.status === 404 ? (
+                    <EmptyState>
+                        The bracket for this round isn't ready yet.
+                    </EmptyState>
+                ) : view ? (
                     <EmptyState>
                         There's no such match in this round.
                     </EmptyState>

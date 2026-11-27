@@ -23,59 +23,86 @@ import {
 
 const SUFFIX = 'h2h-public';
 
-/** Every key the public bracket may have, at any depth */
-const PUBLIC_KEYS = new Set([
-  // the round
-  'roundId',
-  'size',
-  'status',
-  'stages',
-  'entrants',
-  'matches',
-  // stages
-  'stage',
-  'label',
-  'setsToWin',
-  // entrants
-  'id',
-  'seed',
-  'name',
-  'countryIso2',
-  'registrantId',
-  'bestSingle',
-  'position',
-  'stageReached',
-  // matches
-  'matchNumber',
-  'winnerSide',
-  'endedBy',
-  'sideA',
-  'sideB',
-  'entrantId',
-  'source',
-  'outcome',
-  'score',
-  'a',
-  'b',
-  'sets',
-  // sets and points
-  'setNumber',
-  'decidedBy',
-  'points',
-  'pointNumber',
-  'decided',
-  'value',
-  'penalty',
-  'extraGranted',
-]);
+/**
+ * The keys the public bracket has at each place in it, exactly: an array's
+ * items share a path ending in []. Anything else is a leak.
+ */
+const PUBLIC_SHAPE: Record<string, string[]> = {
+  '': ['entrants', 'matches', 'roundId', 'size', 'stages', 'status'],
+  'stages[]': ['label', 'setsToWin', 'stage'],
+  'entrants[]': [
+    'bestSingle',
+    'countryIso2',
+    'id',
+    'name',
+    'position',
+    'registrantId',
+    'seed',
+    'stageReached',
+  ],
+  'matches[]': [
+    'endedBy',
+    'id',
+    'label',
+    'matchNumber',
+    'score',
+    'sets',
+    'setsToWin',
+    'sideA',
+    'sideB',
+    'stage',
+    'status',
+    'winnerSide',
+  ],
+  'matches[].score': ['a', 'b'],
+  'matches[].sideA': ['entrantId', 'source'],
+  'matches[].sideB': ['entrantId', 'source'],
+  'matches[].sideA.source': ['matchNumber', 'outcome'],
+  'matches[].sideB.source': ['matchNumber', 'outcome'],
+  'matches[].sets[]': ['decidedBy', 'points', 'setNumber', 'winnerSide'],
+  'matches[].sets[].points[]': [
+    'a',
+    'b',
+    'decided',
+    'extraGranted',
+    'pointNumber',
+    'winnerSide',
+  ],
+  // A time, and nothing else about the attempt
+  'matches[].sets[].points[].a': ['penalty', 'value'],
+  'matches[].sets[].points[].b': ['penalty', 'value'],
+};
 
-const keysOf = (value: unknown): string[] => {
-  if (Array.isArray(value)) return value.flatMap(keysOf);
-  if (value === null || typeof value !== 'object') return [];
-  return Object.entries(value).flatMap(([key, child]) => [
-    key,
-    ...keysOf(child),
-  ]);
+/** Every object's keys in the answer, by where it sits */
+const shapeOf = (
+  value: unknown,
+  path = '',
+  shape = new Map<string, Set<string>>(),
+) => {
+  if (Array.isArray(value)) {
+    value.forEach((item) => shapeOf(item, `${path}[]`, shape));
+  } else if (value !== null && typeof value === 'object') {
+    const keys = shape.get(path) ?? new Set<string>();
+    shape.set(path, keys);
+    for (const [key, child] of Object.entries(value)) {
+      keys.add(key);
+      shapeOf(child, path ? `${path}.${key}` : key, shape);
+    }
+  }
+  return shape;
+};
+
+/** Fails on any object in the answer with a key it shouldn't have */
+const expectPublicShape = (body: unknown) => {
+  const shape = shapeOf(body);
+  // Every place the check knows must have turned up, so none is skipped
+  expect([...shape.keys()].sort()).toEqual(Object.keys(PUBLIC_SHAPE).sort());
+  for (const [path, keys] of shape) {
+    expect({ path, keys: [...keys].sort() }).toEqual({
+      path,
+      keys: PUBLIC_SHAPE[path],
+    });
+  }
 };
 
 interface PublicPoint {
@@ -375,7 +402,7 @@ describe('Public head-to-head bracket (e2e)', () => {
     });
   });
 
-  it('leaves out card ids, registration ids, attempt ids, comments and scrambles', async () => {
+  it('leaves out card ids, registration ids, attempt ids, statuses, comments and scrambles', async () => {
     const [first] = seeds;
     const original = { cardId: first.cardId };
     await db.person.update({
@@ -385,18 +412,45 @@ describe('Public head-to-head bracket (e2e)', () => {
     try {
       const view = (await getPublic().expect(200)).body as PublicView;
       const semi = matchOf(view, 1);
+      const a = personOf(view, semi.sideA.entrantId);
+      const b = personOf(view, semi.sideB.entrantId);
       await request(server())
         .post(`/h2h/match/${semi.id}/start`)
         .set(as(users.STAGE_LEADER))
         .expect(200);
-      await enter(personOf(view, semi.sideA.entrantId), 1000);
-      await enter(personOf(view, semi.sideB.entrantId), 1100);
+      await enter(a, 1000);
+      await enter(b, 1100);
+      // An incident on A's next solve: the point waits for the delegate
+      await enter(a, 990);
+      const staff = await request(server())
+        .get(`/h2h/${roundId}`)
+        .set(as(users.DELEGATE))
+        .expect(200);
+      const incident = staff.body.bracket.matches[0].sets[0].points[1].attemptA;
+      await request(server())
+        .put(`/attempt/${incident.id}`)
+        .set(as(users.DELEGATE))
+        .send({
+          attemptNumber: incident.attemptNumber,
+          value: 990,
+          penalty: 0,
+          status: 'UNRESOLVED',
+          type: 'STANDARD_ATTEMPT',
+        })
+        .expect(200);
+      await enter(b, 1050);
 
       const res = await getPublic().expect(200);
-      const unexpected = [...new Set(keysOf(res.body))].filter(
-        (key) => !PUBLIC_KEYS.has(key),
-      );
-      expect(unexpected).toEqual([]);
+      expectPublicShape(res.body);
+      const points = matchOf(res.body as PublicView, 1).sets[0].points;
+      expect(points[1]).toEqual({
+        pointNumber: 2,
+        winnerSide: null,
+        decided: false,
+        a: { value: 990, penalty: 0 },
+        b: { value: 1050, penalty: 0 },
+        extraGranted: false,
+      });
 
       const text = res.text;
       const attempts = await db.attempt.findMany({
@@ -413,6 +467,7 @@ describe('Public head-to-head bracket (e2e)', () => {
         '71829364',
         'Private note',
         'encrypted-',
+        'UNRESOLVED',
         ...attempts.map((attempt) => attempt.id),
         ...scrambleSets.map((set) => set.id),
         ...seeds.map((person) => person.id),
@@ -428,6 +483,81 @@ describe('Public head-to-head bracket (e2e)', () => {
         },
       });
     }
+  });
+
+  it('leaves out points and sets raced after the match was over', async () => {
+    // First to 2 sets this time
+    await clean();
+    await request(server())
+      .post(`/h2h/${roundId}`)
+      .set(as(users.DELEGATE))
+      .send({ size: 4, setsToWin: { SEMIFINAL: 2, THIRD_PLACE: 2, FINAL: 2 } })
+      .expect(201);
+    await request(server())
+      .put(`/h2h/${roundId}/seeds`)
+      .set(as(users.DELEGATE))
+      .send({ personIds: seeds.map((p) => p.id) })
+      .expect(200);
+    await importSets(['A', 'B', 'C', 'D']);
+    const view = (await getPublic().expect(200)).body as PublicView;
+    const semi = matchOf(view, 1);
+    const a = personOf(view, semi.sideA.entrantId);
+    const b = personOf(view, semi.sideB.entrantId);
+    const point = async (aValue: number, bValue: number) => {
+      await enter(a, aValue);
+      await enter(b, bValue);
+    };
+    await request(server())
+      .post(`/h2h/match/${semi.id}/start`)
+      .set(as(users.STAGE_LEADER))
+      .expect(200);
+    // Set 1 to A; set 2 goes A, A, B, B, B; set 3 to A, who wins 2-1
+    for (let i = 0; i < 3; i++) await point(1000, 1100);
+    await point(1000, 1100);
+    await point(1000, 1100);
+    for (let i = 0; i < 3; i++) await point(1200, 1100);
+    for (let i = 0; i < 3; i++) await point(1000, 1100);
+    expect(matchOf((await getPublic()).body, 1).sets).toHaveLength(3);
+
+    // B's point 3 in set 2 was a DNF: A had set 2, and the match, at 3-0
+    const staff = await request(server())
+      .get(`/h2h/${roundId}`)
+      .set(as(users.DELEGATE))
+      .expect(200);
+    const staffMatch = staff.body.bracket.matches.find(
+      (m: { matchNumber: number }) => m.matchNumber === 1,
+    );
+    const dnf = staffMatch.sets[1].points[2].attemptB;
+    await request(server())
+      .put(`/attempt/${dnf.id}`)
+      .set(as(users.DELEGATE))
+      .send({
+        attemptNumber: dnf.attemptNumber,
+        value: dnf.value,
+        penalty: -1,
+        status: 'STANDARD',
+        type: 'STANDARD_ATTEMPT',
+      })
+      .expect(200);
+    await request(server())
+      .post(`/h2h/match/${semi.id}/reopen`)
+      .set(as(users.DELEGATE))
+      .send({ comment: 'Point 3 was a DNF' })
+      .expect(200);
+
+    const after = matchOf((await getPublic().expect(200)).body, 1);
+    expect(after).toMatchObject({
+      status: 'FINISHED',
+      winnerSide: 'A',
+      score: { a: 2, b: 0 },
+    });
+    // Set 2's points 4 and 5, and the whole of set 3, count nowhere
+    expect(after.sets.map((set) => set.setNumber)).toEqual([1, 2]);
+    expect(after.sets[1].points.map((p) => p.winnerSide)).toEqual([
+      'A',
+      'A',
+      'A',
+    ]);
   });
 
   it('answers 404 for a round without a bracket', async () => {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+    isLaterPoint,
     layoutBracket,
     matchEndText,
     matchFormatText,
@@ -134,12 +135,12 @@ describe("pointMarkers", () => {
             [point(1, 900, 1000), point(2, 1000, 900), point(3, 900, 900)],
             null
         );
-        expect(pointMarkers(done, "A").slice(0, 3)).toEqual([
+        expect(pointMarkers(done, "A", true).slice(0, 3)).toEqual([
             "won",
             "lost",
             "none",
         ]);
-        expect(pointMarkers(done, "B").slice(0, 3)).toEqual([
+        expect(pointMarkers(done, "B", true).slice(0, 3)).toEqual([
             "lost",
             "won",
             "none",
@@ -147,7 +148,9 @@ describe("pointMarkers", () => {
     });
 
     it("shows the points a set can still take, up to the tie-break", () => {
-        expect(pointMarkers(set(1, []), "A")).toEqual(Array(5).fill("pending"));
+        expect(pointMarkers(set(1, []), "A", true)).toEqual(
+            Array(5).fill("pending")
+        );
         // 2–1, with the next point half raced
         const playing = set(1, [
             point(1, 900, 1000),
@@ -160,7 +163,7 @@ describe("pointMarkers", () => {
                 winnerSide: null,
             },
         ]);
-        expect(pointMarkers(playing, "A")).toEqual([
+        expect(pointMarkers(playing, "A", true)).toEqual([
             "won",
             "won",
             "lost",
@@ -172,7 +175,7 @@ describe("pointMarkers", () => {
             1,
             Array.from({ length: 6 }, (_, i) => point(i + 1, 900, 900))
         );
-        expect(pointMarkers(level, "A")).toHaveLength(7);
+        expect(pointMarkers(level, "A", true)).toHaveLength(7);
     });
 
     it("shows only the points played once the set is decided", () => {
@@ -181,7 +184,43 @@ describe("pointMarkers", () => {
             [point(1, 900, 1000), point(2, 900, 1000), point(3, 900, 1000)],
             "A"
         );
-        expect(pointMarkers(won, "B")).toEqual(["lost", "lost", "lost"]);
+        expect(pointMarkers(won, "B", true)).toEqual(["lost", "lost", "lost"]);
+    });
+});
+
+describe("pointMarkers once the match is over", () => {
+    it("shows nothing still to come in a set a retirement ended", () => {
+        // 1–0 when B retired, with A's solve in on point 2
+        const cut = set(1, [
+            point(1, 900, 1000),
+            { ...point(2, 900, 0), b: null, decided: false, winnerSide: null },
+        ]);
+        expect(pointMarkers(cut, "A", false)).toEqual(["won", "none"]);
+        expect(pointMarkers(cut, "A", true)).toHaveLength(5);
+    });
+});
+
+describe("isLaterPoint", () => {
+    const at = (
+        matchNumber: number,
+        setNumber: number,
+        pointNumber: number
+    ) => ({
+        matchNumber,
+        setNumber,
+        pointNumber,
+    });
+
+    it("is a later point of the same match", () => {
+        expect(isLaterPoint(at(1, 1, 3), at(1, 1, 2))).toBe(true);
+        expect(isLaterPoint(at(1, 2, 1), at(1, 1, 5))).toBe(true);
+        expect(isLaterPoint(at(1, 1, 1), at(1, 1, 0))).toBe(true);
+    });
+
+    it("isn't another match, or a point gone back to undecided", () => {
+        expect(isLaterPoint(at(2, 1, 3), at(1, 1, 2))).toBe(false);
+        expect(isLaterPoint(at(1, 1, 2), at(1, 1, 3))).toBe(false);
+        expect(isLaterPoint(at(1, 1, 3), at(1, 1, 3))).toBe(false);
     });
 });
 

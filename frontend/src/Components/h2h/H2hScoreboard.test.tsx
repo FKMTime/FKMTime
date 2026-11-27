@@ -156,6 +156,85 @@ describe("H2hScoreboard", () => {
         expect(document.querySelector("[data-lit]")).toBeNull();
     });
 
+    it("lights nothing up when it moves on to another match", () => {
+        const view = withMatch(playing(), 2, {
+            status: "IN_PROGRESS",
+            sets: [set(1, [point(1, 900, 1000), point(2, 1000, 900)])],
+        });
+        const { rerender } = render(
+            <H2hScoreboard view={view} match={view.matches[0]} stations={[]} />
+        );
+        rerender(
+            <H2hScoreboard view={view} match={view.matches[1]} stations={[]} />
+        );
+        expect(
+            screen.getByRole("region", { name: "Competitor 2" })
+        ).toBeTruthy();
+        expect(document.querySelector("[data-lit]")).toBeNull();
+    });
+
+    it("lights nothing up when a point goes back to undecided, and lights its new result", () => {
+        const one = playing(1);
+        const { rerender } = render(
+            <H2hScoreboard view={one} match={one.matches[0]} stations={[]} />
+        );
+        // An extra granted on set 2's point 2: it isn't decided any more
+        const back = playing(0);
+        rerender(
+            <H2hScoreboard view={back} match={back.matches[0]} stations={[]} />
+        );
+        expect(document.querySelector("[data-lit]")).toBeNull();
+        // Raced again, B wins it
+        rerender(
+            <H2hScoreboard view={one} match={one.matches[0]} stations={[]} />
+        );
+        expect(
+            screen
+                .getByRole("region", { name: "Competitor 4" })
+                .getAttribute("data-lit")
+        ).toBe("true");
+    });
+
+    it("never times a competitor with another station's packets", () => {
+        // Older firmware: a timer runs while its time grows between packets
+        const oldFirmware = (
+            registrantId: number,
+            espId: number,
+            ms: number,
+            receivedAt: number
+        ) => ({
+            ...station(registrantId, ms),
+            espId,
+            timerRunning: null,
+            serverReceivedAt: receivedAt,
+        });
+        const view = withMatch(playing(), 2, { status: "IN_PROGRESS" });
+        const { rerender } = render(
+            <H2hScoreboard
+                view={view}
+                match={view.matches[0]}
+                stations={[oldFirmware(101, 1, 5000, NOW - 1000)]}
+            />
+        );
+        // Semifinal 2's side A is at another station, stopped at 6.00
+        rerender(
+            <H2hScoreboard
+                view={view}
+                match={view.matches[1]}
+                stations={[oldFirmware(102, 2, 6000, NOW)]}
+            />
+        );
+        const a = screen.getByRole("region", { name: "Competitor 2" });
+        expect(a.querySelector("[data-live]")).toBeNull();
+    });
+
+    it("stacks the competitors on a phone", () => {
+        renderBoard(playing());
+        const sides = screen.getByTestId("scoreboard-sides");
+        expect(sides.className).toContain("grid-cols-1");
+        expect(sides.className).toContain("min-[760px]:grid-cols-2");
+    });
+
     it("announces the winner and who they play next", () => {
         const view = withMatch(playing(), 1, {
             status: "FINISHED",

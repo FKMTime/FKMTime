@@ -272,7 +272,7 @@ export const layoutBracket = (
     };
 };
 
-/** The match being played: the earliest one in progress */
+/** The matches being played, in match order */
 export const playingMatches = (view: Pick<PublicH2hView, "matches">) =>
     view.matches.filter((match) => match.status === "IN_PROGRESS");
 
@@ -282,20 +282,23 @@ export type PointMarker = "won" | "lost" | "none" | "pending";
 
 /**
  * One side's markers for a set: each point it won or lost, one with no
- * winner, and the points still to come as "pending". A set still being
- * played shows as many pending as it could still take if every point had a
- * winner, up to the 7 before the tie-break.
+ * winner, and the points still to come as "pending". While the match is
+ * being played, a set not yet decided shows as many pending as it could
+ * still take if every point had a winner, up to the 7 before the
+ * tie-break. Once the match is over (a retirement can end it mid-set),
+ * nothing is still to come, and a point left undecided had no winner.
  */
 export const pointMarkers = (
     set: Pick<PublicH2hSet, "points" | "winnerSide">,
-    side: H2hSideName
+    side: H2hSideName,
+    matchInPlay: boolean
 ): PointMarker[] => {
     const played = set.points.map((point): PointMarker => {
-        if (!point.decided) return "pending";
+        if (!point.decided) return matchInPlay ? "pending" : "none";
         if (point.winnerSide === null) return "none";
         return point.winnerSide === side ? "won" : "lost";
     });
-    if (set.winnerSide !== null) return played;
+    if (set.winnerSide !== null || !matchInPlay) return played;
     const decided = set.points.filter((point) => point.decided).length;
     const { a, b } = setPoints(set);
     const stillPossible = POINTS_TO_WIN_SET - a + (POINTS_TO_WIN_SET - b) - 1;
@@ -316,6 +319,24 @@ export const latestPoint = (match: Pick<PublicH2hMatch, "sets">) => {
         .filter((point) => point.a !== null || point.b !== null);
     return withTimes[withTimes.length - 1] ?? null;
 };
+
+/** Where a point sits in its match, to tell which of two came later */
+export interface PointPlace {
+    matchNumber: number;
+    setNumber: number;
+    pointNumber: number;
+}
+
+/**
+ * Whether the match's last decided point is a new one since `seen`: a
+ * later point of the same match. Another match, or a point going back to
+ * undecided (an extra granted, a reopened match), is not.
+ */
+export const isLaterPoint = (place: PointPlace, seen: PointPlace) =>
+    place.matchNumber === seen.matchNumber &&
+    (place.setNumber > seen.setNumber ||
+        (place.setNumber === seen.setNumber &&
+            place.pointNumber > seen.pointNumber));
 
 /** The last decided point, whose winner lights up for a moment */
 export const lastDecidedPoint = (match: Pick<PublicH2hMatch, "sets">) => {

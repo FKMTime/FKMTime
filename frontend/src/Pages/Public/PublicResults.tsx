@@ -18,21 +18,27 @@ const PublicResults = () => {
     const navigate = useNavigate();
     const competition = useAtomValue(competitionAtom);
     const { liveRoundIds } = useOutletContext<PublicOutletContext>();
+    // A head-to-head round ranks by its bracket, which is all it needs: its
+    // results aren't fetched at all. So both wait for the competition.
+    const isH2h = getH2hRoundIds(competition?.wcif).includes(roundId);
+    const wantsResults = !!roundId && !!competition && !isH2h;
     // The last round's results stay while the next round loads
     const resultsQuery = publicRoundResultsQuery(roundId);
     const { data } = useLiveQuery(resultsQuery, {
         keepPreviousData: true,
-        enabled: !!roundId,
+        enabled: wantsResults,
     });
     const results: Result[] = data ?? [];
-    useSocketRoom(roundId ? "Results" : null, {
+    useSocketRoom(wantsResults ? "Results" : null, {
         params: { roundId },
         invalidateOn: { resultEntered: [resultsQuery.key] },
     });
-    // A head-to-head round ranks by its bracket
-    const isH2h = getH2hRoundIds(competition?.wcif).includes(roundId);
     const h2hQuery = publicH2hQuery(roundId);
-    const { data: h2h } = useLiveQuery(h2hQuery, { enabled: isH2h });
+    const {
+        data: h2h,
+        error: h2hError,
+        refetch: refetchH2h,
+    } = useLiveQuery(h2hQuery, { enabled: isH2h });
     useSocketRoom(isH2h ? "H2h" : null, {
         params: { roundId },
         invalidateOn: { h2hUpdated: [h2hQuery.key] },
@@ -56,6 +62,8 @@ const PublicResults = () => {
             liveRoundIds={liveRoundIds ?? []}
             onRoundChange={(id) => navigate(`/public/results/${id}`)}
             h2h={isH2h ? h2h : null}
+            h2hError={isH2h ? h2hError : null}
+            onRetryH2h={() => void refetchH2h()}
             bracketHref={publicH2hPath(roundId)}
         />
     );

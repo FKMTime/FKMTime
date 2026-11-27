@@ -58,6 +58,8 @@ const publicBracketSelect = {
           setNumber: true,
           winnerSide: true,
           decidedBy: true,
+          // Every point, those that don't count included
+          _count: { select: { points: true } },
           points: {
             // Raced after the set was over: they don't count anywhere
             where: { afterEnd: false },
@@ -108,6 +110,12 @@ export class H2hPublicService {
       })),
     );
     const labels = matchLabels(bracket.matches);
+    // A set raced only after the match was over (found by reopening it on
+    // amended times) counts nowhere, so it isn't shown at all
+    const countingSets = (match: (typeof bracket.matches)[number]) =>
+      match.sets.filter(
+        (set) => set.points.length > 0 || set._count.points === 0,
+      );
     const stages = isBracketSize(bracket.size) ? getStages(bracket.size) : [];
 
     return {
@@ -159,10 +167,10 @@ export class H2hPublicService {
           },
         },
         score: {
-          a: match.sets.filter((set) => set.winnerSide === 'A').length,
-          b: match.sets.filter((set) => set.winnerSide === 'B').length,
+          a: countingSets(match).filter((set) => set.winnerSide === 'A').length,
+          b: countingSets(match).filter((set) => set.winnerSide === 'B').length,
         },
-        sets: match.sets.map((set) => ({
+        sets: countingSets(match).map((set) => ({
           setNumber: set.setNumber,
           winnerSide: set.winnerSide,
           decidedBy: set.decidedBy,

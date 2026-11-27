@@ -1181,7 +1181,13 @@ slide.
   - `registrantId` is the number stations report in `currentTimeInfo`,
     which is already public. The scoreboard needs it to find each
     competitor's station.
-  - Points marked `afterEnd` are left out, as they count nowhere.
+  - Points marked `afterEnd` are left out, as they count nowhere. So is a
+    set whose points are all `afterEnd` (raced after the match was over),
+    and it doesn't count towards the sets won.
+  - No attempt status, which is how an open incident shows: the time
+    shows and the point stays undecided. The shared public results route
+    (`GET /result/public/round/:roundId`) does return statuses, as it did
+    before; the public results page doesn't fetch it for an H2H round.
 - **Live updates** come from the public `joinH2h` room. `h2hUpdated`
   carries only `{ roundId, matchId }`, and the pages refetch.
 - **Bracket layout.** The first stage's matches are one slot apart. Every
@@ -1195,12 +1201,21 @@ slide.
 - **Navigation.** Each H2H round of the competition gets a "Bracket" item
   after Results in the public sidebar, and a tab on phones, whether or not
   the round is in progress. With more than one H2H round, each is named
-  after its round.
-- **Point markers.** In a set still being played, the scoreboard shows the
-  points it could still take if every point had a winner, never past the
-  7 before the tie-break. A decided set shows only the points played.
-- **After a point** the scoreboard lights the winner's side for 5 seconds.
-  Points decided before the page opened don't light up.
+  after its round, and the phone tabs scroll rather than squeeze. Before
+  the competition loads, a bracket page is already titled "Bracket".
+- **Point markers.** While the match is being played, a set not yet
+  decided shows the points it could still take if every point had a
+  winner, never past the 7 before the tie-break. A decided set shows only
+  the points played. Once the match is over, nothing is still to come: a
+  set a retirement cut short shows its points, and a point left undecided
+  shows as having no winner.
+- **After a point** the scoreboard lights the winner's side for 5 seconds,
+  only for a later point of the same match. Points decided before the page
+  opened, a point that goes back to undecided (an extra granted, a reopened
+  match) and the switch to another match don't light anything up. Each
+  match gets a fresh scoreboard, and a competitor's timer is read only
+  from their own station's packets.
+- **On phones** the scoreboard stacks the two competitors.
 - **TV.** The TV follows the first H2H round among the rounds in progress,
   from the rooms' current groups, like its results slides. It doesn't
   follow an H2H round that no room is running. Between matches the
@@ -1209,6 +1224,7 @@ slide.
   turns.
 - **Results.** The public results board, and the staff copy of it, rank an
   H2H round by the positions and stage reached from the public endpoint.
+  While the bracket loads it says so, and if it fails it offers a retry.
   Columns: #, Name, Representing, Stage reached, Best. Competitors without a
   position follow, by best single.
 

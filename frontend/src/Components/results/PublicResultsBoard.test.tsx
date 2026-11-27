@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import { Competition } from "wcif-helpers";
 
 import { AttemptStatus, AttemptType, Result } from "@/lib/interfaces";
+import { QueryError } from "@/lib/queryCache";
 import { buildView, entrant } from "@/lib/tests/h2hPublicFixtures";
 
 import PublicResultsBoard from "./PublicResultsBoard";
@@ -182,5 +183,42 @@ describe("PublicResultsBoard", () => {
         expect(
             screen.getByRole("link", { name: "Bracket" }).getAttribute("href")
         ).toBe("/public/h2h/333oh-r2");
+    });
+
+    it("says when a head-to-head round's bracket couldn't load, and retries", async () => {
+        const onRetry = vi.fn();
+        const board = (h2hError: unknown) => (
+            <MemoryRouter>
+                <PublicResultsBoard
+                    wcif={wcif}
+                    roundId="333oh-r2"
+                    results={[]}
+                    liveRoundIds={[]}
+                    onRoundChange={vi.fn()}
+                    h2h={null}
+                    h2hError={h2hError}
+                    onRetryH2h={onRetry}
+                />
+            </MemoryRouter>
+        );
+        const { rerender } = render(board(null));
+        // Still loading: neither "No results yet" nor "Not started"
+        expect(screen.getByLabelText("Loading results")).toBeTruthy();
+        expect(screen.queryByText("No results yet.")).toBeNull();
+        expect(screen.queryByText(/Not started/)).toBeNull();
+
+        rerender(board(new QueryError(500)));
+        expect(screen.getByRole("alert").textContent).toContain(
+            "Couldn't load"
+        );
+        await userEvent.click(
+            screen.getByRole("button", { name: "Try again" })
+        );
+        expect(onRetry).toHaveBeenCalled();
+
+        // No bracket yet is no results yet
+        rerender(board(new QueryError(404)));
+        expect(screen.getByText("No results yet.")).toBeTruthy();
+        expect(screen.getByText(/Not started/)).toBeTruthy();
     });
 });

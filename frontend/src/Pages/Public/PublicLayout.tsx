@@ -16,9 +16,8 @@ import { cn } from "@/lib/utils";
 import { socket } from "@/socket";
 
 import {
-    getActivePublicNavId,
     getH2hRoundIds,
-    getPublicNavItems,
+    getPublicTitle,
     isPublicResultsPath,
     PublicOutletContext,
 } from "./publicNavigation";
@@ -57,10 +56,7 @@ const PublicLayout = () => {
         () => getH2hRoundIds(competition?.wcif),
         [competition]
     );
-    const activeId = getActivePublicNavId(location.pathname);
-    const title =
-        getPublicNavItems(h2hRoundIds).find((item) => item.id === activeId)
-            ?.label ?? "Live solving";
+    const title = getPublicTitle(location.pathname, h2hRoundIds);
 
     // Event names and icons are read from what getEvents stores, so they
     // must be in place before the competition renders anything
