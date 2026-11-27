@@ -78,24 +78,42 @@ const PublicTv = () => {
     );
     // A head-to-head round in progress: its bracket, or the match on stage.
     // One at a time, as a venue runs one such round at once.
+    const h2hRoundIds = useMemo(
+        () => getH2hRoundIds(competition?.wcif),
+        [competition]
+    );
     const h2hRoundId =
-        liveRoundIds.find((id) =>
-            getH2hRoundIds(competition?.wcif).includes(id)
-        ) ?? null;
+        liveRoundIds.find((id) => h2hRoundIds.includes(id)) ?? null;
     const h2hQuery = publicH2hQuery(h2hRoundId ?? "");
     const {
         data: h2hView,
         dataUpdatedAt: h2hUpdatedAt,
         error: h2hError,
+        refetch: refetchH2h,
     } = useLiveQuery(h2hQuery, { enabled: !!h2hRoundId });
     const h2hRounds = useMemo(
         () => getTvH2hRounds(h2hRoundId, h2hView),
         [h2hRoundId, h2hView]
     );
+    // Nobody is at the TV to press retry: a bracket that failed to load
+    // (or isn't created yet) is fetched again until it comes
+    useEffect(() => {
+        if (!h2hError) return;
+        const retry = setInterval(() => void refetchH2h(), ROOMS_REFRESH_MS);
+        return () => clearInterval(retry);
+    }, [h2hError, refetchH2h]);
     const slides = useMemo(
-        () => getTvSlides(liveRoundIds, h2hRounds),
-        [liveRoundIds, h2hRounds]
+        () => getTvSlides(liveRoundIds, h2hRounds, h2hRoundIds),
+        [liveRoundIds, h2hRounds, h2hRoundIds]
     );
+    // When the matches stop (or start), the rotation starts over, so the
+    // bracket is what comes up when a match ends
+    const isMatchPlaying = slides[0]?.type === "h2hMatch";
+    const [shownPlaying, setShownPlaying] = useState(isMatchPlaying);
+    if (shownPlaying !== isMatchPlaying) {
+        setShownPlaying(isMatchPlaying);
+        setSlideIndex(0);
+    }
     const slide = slides[stepSlide(slideIndex, slides.length, 0)];
     const roundId = slide.type === "results" ? slide.roundId : null;
 
@@ -317,7 +335,9 @@ const PublicTv = () => {
                             {h2hError instanceof QueryError &&
                             h2hError.status === 404
                                 ? "The bracket for this round isn't ready yet."
-                                : "Loading the bracket…"}
+                                : h2hError
+                                  ? "Couldn't load the bracket. Trying again…"
+                                  : "Loading the bracket…"}
                         </p>
                     )
                 ) : slide.type === "live" ? (

@@ -48,10 +48,14 @@ export const getTvH2hRounds = (
  * shows its bracket instead of its results, ahead of live solving, so the
  * bracket is what comes up when a match ends. While one of its matches is
  * being played, that match's scoreboard replaces the whole rotation.
+ * `h2hRoundIds` are all the competition's head-to-head rounds: the TV
+ * follows only those in `h2hRounds`, and leaves any other out rather than
+ * rank it as an ordinary round.
  */
 export const getTvSlides = (
     liveRoundIds: string[],
-    h2hRounds: TvH2hRound[] = []
+    h2hRounds: TvH2hRound[] = [],
+    h2hRoundIds: string[] = []
 ): TvSlide[] => {
     const playing = h2hRounds.flatMap(({ roundId, playingMatchNumbers }) =>
         playingMatchNumbers.map((matchNumber) => ({
@@ -69,7 +73,9 @@ export const getTvSlides = (
             .map((roundId) => ({ type: "h2hBracket" as const, roundId })),
         { type: "live" },
         ...liveRoundIds
-            .filter((roundId) => !isH2h(roundId))
+            .filter(
+                (roundId) => !isH2h(roundId) && !h2hRoundIds.includes(roundId)
+            )
             .map((roundId) => ({ type: "results" as const, roundId })),
     ];
 };

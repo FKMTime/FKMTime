@@ -64,6 +64,20 @@ describe("public TV view", () => {
         expect(getTvH2hRounds(null, undefined)).toEqual([]);
     });
 
+    it("leaves out a second head-to-head round rather than rank it as results", () => {
+        expect(
+            getTvSlides(
+                ["333oh-r2", "222-r3", "333-r1"],
+                getTvH2hRounds("333oh-r2", undefined),
+                ["333oh-r2", "222-r3"]
+            )
+        ).toEqual([
+            { type: "h2hBracket", roundId: "333oh-r2" },
+            { type: "live" },
+            { type: "results", roundId: "333-r1" },
+        ]);
+    });
+
     it("takes the playing matches from the round's own bracket", () => {
         const view = withMatch(buildView(4), 2, { status: "IN_PROGRESS" });
         expect(getTvH2hRounds(view.roundId, view)).toEqual([
