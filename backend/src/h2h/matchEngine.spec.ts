@@ -6,6 +6,7 @@ import {
 import {
   amendedAfter,
   FedMatch,
+  holdSharedScrambles,
   MatchConflict,
   matchesFedBy,
   MatchInput,
@@ -562,5 +563,88 @@ describe('amendedAfter', () => {
         penalty: 0,
       }),
     ).toBe(false);
+  });
+});
+
+describe('holdSharedScrambles', () => {
+  const spareF1 = { scrambleSetId: 'set-f', set: 'F', num: 1, isExtra: false };
+  type Scramble = typeof spareF1;
+  const entry = (
+    label: string,
+    matchNumber: number,
+    scramble: Scramble | null,
+    options: { predicted?: boolean; waitingSince?: Date | null } = {},
+  ) => ({
+    label,
+    matchNumber,
+    scramble,
+    predicted: options.predicted ?? true,
+    where: `${label} · set 2`,
+    text: scramble
+      ? `${label} · set 2 · Set ${scramble.set}, scramble ${scramble.num}`
+      : `${label} · set 2`,
+    warning: null,
+    waitingSince: options.waitingSince ?? null,
+  });
+  const at = (seconds: number) =>
+    new Date(Date.UTC(2026, 0, 1, 10, 0, seconds));
+
+  it('keeps a spare scramble for the match that has waited longest, and holds the others', () => {
+    const [semi1, semi2] = holdSharedScrambles([
+      entry('Semifinal 1', 1, spareF1, { waitingSince: at(30) }),
+      // Decided its last point first, so it was shown Set F first
+      entry('Semifinal 2', 2, spareF1, { waitingSince: at(10) }),
+    ]);
+
+    expect(semi2.scramble).toEqual(spareF1);
+    expect(semi2.text).toBe('Semifinal 2 · set 2 · Set F, scramble 1');
+    expect(semi2.warning).toBe(
+      'Semifinal 1 would take Set F, scramble 1 from the spares too. Scramble it for Semifinal 2 only: theirs moves on once a result of Semifinal 2 is in.',
+    );
+    expect(semi1.scramble).toBeNull();
+    // The held match names no scramble anywhere
+    expect(semi1.text).toBe('Semifinal 1 · set 2');
+    expect(semi1.warning).toBe(
+      "Semifinal 2 takes Set F, scramble 1 from the spares first. Wait for a result of Semifinal 2: this match's scramble shows then.",
+    );
+  });
+
+  it('goes by match order when both started waiting together', () => {
+    const [semi1, semi2] = holdSharedScrambles([
+      entry('Semifinal 1', 1, spareF1, { waitingSince: at(10) }),
+      entry('Semifinal 2', 2, spareF1, { waitingSince: at(10) }),
+    ]);
+
+    expect(semi1.scramble).toEqual(spareF1);
+    expect(semi2.scramble).toBeNull();
+  });
+
+  it('holds a prediction of a scramble an open point races already', () => {
+    const [semi1, semi2] = holdSharedScrambles([
+      // Its point opened on it after Semifinal 2 started waiting
+      entry('Semifinal 1', 1, spareF1, {
+        predicted: false,
+        waitingSince: at(30),
+      }),
+      entry('Semifinal 2', 2, spareF1, { waitingSince: at(10) }),
+    ]);
+
+    expect(semi1.scramble).toEqual(spareF1);
+    expect(semi1.warning).toBeNull();
+    expect(semi2.scramble).toBeNull();
+    expect(semi2.text).toBe('Semifinal 2 · set 2');
+    expect(semi2.warning).toBe(
+      "Semifinal 1 races Set F, scramble 1 already. This match's scramble shows in a moment.",
+    );
+  });
+
+  it('leaves different scrambles and matches without one alone', () => {
+    const entries = [
+      entry('Semifinal 1', 1, spareF1),
+      entry('Semifinal 2', 2, { ...spareF1, num: 2 }),
+      entry('Final', 4, null),
+    ];
+
+    expect(holdSharedScrambles(entries)).toEqual(entries);
   });
 });

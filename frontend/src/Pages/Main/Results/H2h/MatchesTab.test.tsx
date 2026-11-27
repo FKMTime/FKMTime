@@ -14,6 +14,7 @@ import {
     H2hPoint,
     H2hRoundView,
 } from "@/lib/h2h";
+import { AttemptStatus } from "@/lib/interfaces";
 
 import MatchesTab from "./MatchesTab";
 
@@ -271,6 +272,32 @@ describe("MatchesTab", () => {
             "",
         ]);
         expect(rows[1].slice(1, 4)).toEqual(["12.00", "DNF", "No winner"]);
+    });
+
+    it("says a point with an open incident waits for the delegate", () => {
+        const incident: H2hPoint = {
+            ...point(3, 990, 1010, null, false),
+            attemptA: { ...attempt(990), status: AttemptStatus.UNRESOLVED },
+        };
+        state.view = view([
+            {
+                ...playing,
+                sets: [
+                    {
+                        ...playing.sets[0],
+                        points: [
+                            ...playing.sets[0].points.slice(0, 2),
+                            incident,
+                        ],
+                    },
+                ],
+            },
+        ]);
+        render(<MatchesTab roundId="333oh-r2" />);
+
+        expect(
+            screen.getByText("Incident open: the point waits for the delegate")
+        ).toBeTruthy();
     });
 
     it("offers entry for the missing result only, not a second point ahead", () => {

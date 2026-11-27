@@ -470,7 +470,7 @@ describe('Scrambling device flow (e2e)', () => {
       ).expect(404);
     });
 
-    it("refuses a head-to-head round, whose scramble comes from the point's match", async () => {
+    it("refuses a competitor scan in a head-to-head round, whose scramble comes from the point's match", async () => {
       const competition = found(
         await db.competition.findFirst(),
         'competition',
@@ -485,7 +485,9 @@ describe('Scrambling device flow (e2e)', () => {
       const res = await asDevice(
         request(server()).get(`/scrambling/scramble/${CARD_ID}/${h2hRoundId}`),
       ).expect(400);
-      expect(res.body.message).toMatch(/^Head-to-head rounds aren't scrambled/);
+      expect(res.body.message).toMatch(
+        /^In a head-to-head round, pick the match on the device's home screen/,
+      );
       await asDevice(request(server()).post('/scrambling/scramble'))
         .send({
           personId: competitor.id,

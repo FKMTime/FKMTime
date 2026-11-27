@@ -53,8 +53,48 @@
       "translation": "Round changed, call the delegate"
     },
     {
-      "key": "h2hRoundNotOnStations",
-      "translation": "Head-to-head round, call the delegate"
+      "key": "h2hNoMatchInProgress",
+      "translation": "No match in progress"
+    },
+    {
+      "key": "h2hWaitingForOpponent",
+      "translation": "Waiting for opponent"
+    },
+    {
+      "key": "h2hWaitingForDelegate",
+      "translation": "Waiting for delegate"
+    },
+    {
+      "key": "h2hNoScrambleLeft",
+      "translation": "No scramble left"
+    },
+    {
+      "key": "h2hPointWon",
+      "translation": "Point won"
+    },
+    {
+      "key": "h2hPointLost",
+      "translation": "Point lost"
+    },
+    {
+      "key": "h2hNoPoint",
+      "translation": "No point"
+    },
+    {
+      "key": "h2hMatchWon",
+      "translation": "Match won"
+    },
+    {
+      "key": "h2hMatchLost",
+      "translation": "Match lost"
+    },
+    {
+      "key": "h2hScore",
+      "translation": "Set {0} Sets {1}"
+    },
+    {
+      "key": "h2hNextPoint",
+      "translation": "Set {0} Point {1}"
     },
     {
       "key": "attemptAlreadyEntered",

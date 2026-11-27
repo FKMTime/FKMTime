@@ -12,7 +12,7 @@ import { DbService, runInTransaction } from 'src/db/db.service';
 import { bySetLetter } from 'src/scramble-set/setLetters';
 import { Competition, getRoundInfoFromWcif } from 'wcif-helpers';
 
-import { H2hMatchStatus } from '../generated/prisma/client';
+import { AttemptStatus, H2hMatchStatus } from '../generated/prisma/client';
 import {
   getStages,
   isBracketSize,
@@ -36,7 +36,12 @@ import { UpdateScramblePlanDto } from './dto/updateScramblePlan.dto';
 import { UpdateSeedsDto } from './dto/updateSeeds.dto';
 import { H2hMatchService } from './h2hMatch.service';
 import { whyNoBracket } from './h2hRound';
-import { amendedAfter, nextScramble, whyNoReopen } from './matchEngine';
+import {
+  amendedAfter,
+  holdSharedScrambles,
+  nextScramble,
+  whyNoReopen,
+} from './matchEngine';
 import { rankH2hRound } from './ranking';
 import { countPlannedSets } from './scramblePlan';
 import { seedFromPreviousRound, suggestBracketSize } from './seeding';
@@ -71,6 +76,7 @@ const attemptViewSelect = {
   attemptNumber: true,
   value: true,
   penalty: true,
+  status: true,
 } as const;
 
 /** A set of a match with its points, as the Matches tab shows them */
@@ -96,7 +102,7 @@ const setViewSelect = {
         select: {
           num: true,
           isExtra: true,
-          scrambleSet: { select: { set: true } },
+          scrambleSet: { select: { id: true, set: true } },
         },
       },
       // Races replaced by an extra, oldest first
@@ -247,6 +253,7 @@ export class H2hService {
         ? `${name} withdrew in ${labelOf(refusal.matchId)}: reopen that match instead`
         : `${name} withdrew earlier: reopen the match they withdrew from instead`;
     };
+    const inUse = this.scramblesInUse(bracket.matches, labels, scrambleSets);
     const ranking = rankH2hRound(
       bracket.matches,
       bracket.entrants.map((entrant) => ({
@@ -339,14 +346,7 @@ export class H2hService {
               },
             })),
           })),
-          scrambleInUse:
-            match.status === 'IN_PROGRESS'
-              ? this.scrambleInUse(
-                  match,
-                  labels.get(match.id) ?? `Match ${match.matchNumber}`,
-                  scrambleSets,
-                )
-              : null,
+          scrambleInUse: inUse.get(match.id) ?? null,
           log: match.logs.map((entry) => ({
             action: entry.action,
             side: entry.side,
@@ -450,7 +450,8 @@ export class H2hService {
    * The scramble the playing match's next point races, as the scramble team
    * reads it: "Quarterfinal 3 · set 1 · Set C, scramble 4". The open point's
    * own when one competitor is in already, otherwise the one the next
-   * point will take. A warning instead when none is left.
+   * point will take. A warning instead when none is left, and while an
+   * incident on the last point is open: it may be raced again.
    */
   private scrambleInUse(
     match: {
@@ -460,12 +461,13 @@ export class H2hService {
         scrambleSet: { id: string } | null;
         points: {
           pointNumber: number;
-          attemptAId: string | null;
-          attemptBId: string | null;
+          decidedAt: Date | null;
+          attemptA: { status: AttemptStatus } | null;
+          attemptB: { status: AttemptStatus } | null;
           scramble: {
             num: number;
             isExtra: boolean;
-            scrambleSet: { set: string };
+            scrambleSet: { id: string; set: string };
           } | null;
         }[];
       }[];
@@ -488,16 +490,33 @@ export class H2hService {
     const set = match.sets.find((s) => s.winnerSide === null);
     if (!set) return null;
     const where = `${label} · set ${set.setNumber}`;
+    const isIncident = (attempt: { status: AttemptStatus } | null) =>
+      attempt?.status === AttemptStatus.UNRESOLVED;
     const open = set.points.find(
-      (point) => point.attemptAId === null || point.attemptBId === null,
+      (point) =>
+        point.attemptA === null ||
+        point.attemptB === null ||
+        isIncident(point.attemptA) ||
+        isIncident(point.attemptB),
     );
     if (open) {
+      const scramble = open.scramble && {
+        scrambleSetId: open.scramble.scrambleSet.id,
+        set: open.scramble.scrambleSet.set,
+        num: open.scramble.num,
+        isExtra: open.scramble.isExtra,
+      };
       return {
+        setNumber: set.setNumber,
         pointNumber: open.pointNumber,
-        text: open.scramble
-          ? `${where} · ${scrambleText({ ...open.scramble, set: open.scramble.scrambleSet.set })}`
-          : where,
-        warning: null,
+        scramble,
+        predicted: false,
+        text: scramble ? `${where} · ${scrambleText(scramble)}` : where,
+        where,
+        warning:
+          isIncident(open.attemptA) || isIncident(open.attemptB)
+            ? `An incident on point ${open.pointNumber} is open. Wait for the delegate: the point may be raced again.`
+            : null,
       };
     }
     const toOption = (s: (typeof scrambleSets)[number]) => ({
@@ -521,18 +540,128 @@ export class H2hService {
       (set.points[set.points.length - 1]?.pointNumber ?? 0) + 1;
     if (!next) {
       return {
+        setNumber: set.setNumber,
         pointNumber,
+        scramble: null,
+        predicted: false,
         text: where,
+        where,
         warning: `No scramble is left for point ${pointNumber}. Import more scramble sets for this round.`,
       };
     }
     return {
+      setNumber: set.setNumber,
       pointNumber,
+      scramble: {
+        scrambleSetId: next.scrambleSetId,
+        set: next.set,
+        num: next.num,
+        isExtra: next.isExtra,
+      },
+      predicted: true,
       text: `${where} · ${scrambleText(next)}`,
+      where,
       warning: next.fromSpare
         ? `${own ? `Set ${own.set}` : 'This set'} is used up, so the next point takes Set ${next.set} from the spares. Hand it to the scramblers.`
         : null,
     };
+  }
+
+  /**
+   * What the scrambling device shows for the round (SPEC-001, On the day):
+   * each playing match's set and the scramble its next point races, in
+   * match order
+   */
+  async getPlayingScrambles(roundId: string) {
+    const [bracket, scrambleSets] = await Promise.all([
+      this.prisma.h2hBracket.findUnique({
+        where: { roundId },
+        select: {
+          matches: {
+            orderBy: { matchNumber: 'asc' },
+            select: {
+              id: true,
+              stage: true,
+              matchNumber: true,
+              status: true,
+              sets: { orderBy: { setNumber: 'asc' }, select: setViewSelect },
+            },
+          },
+        },
+      }),
+      this.prisma.scrambleSet.findMany({
+        where: { roundId },
+        select: scrambleSetSelect,
+      }),
+    ]);
+    if (!bracket) return [];
+    const labels = matchLabels(bracket.matches);
+    const inUse = this.scramblesInUse(bracket.matches, labels, scrambleSets);
+    return bracket.matches.flatMap((match) => {
+      const scramble = inUse.get(match.id);
+      return scramble
+        ? [
+            {
+              matchId: match.id,
+              label: labels.get(match.id) ?? `Match ${match.matchNumber}`,
+              ...scramble,
+            },
+          ]
+        : [];
+    });
+  }
+
+  /**
+   * The next scramble of every playing match, by match id. Matches that
+   * would take the same spare scramble are held but the first (see
+   * holdSharedScrambles).
+   */
+  private scramblesInUse(
+    matches: (Parameters<H2hService['scrambleInUse']>[0] & {
+      id: string;
+      matchNumber: number;
+      status: H2hMatchStatus;
+    })[],
+    labels: Map<string, string>,
+    scrambleSets: Parameters<H2hService['scrambleInUse']>[2],
+  ) {
+    const playing = [...matches]
+      .filter((match) => match.status === H2hMatchStatus.IN_PROGRESS)
+      .sort((x, y) => x.matchNumber - y.matchNumber)
+      .flatMap((match) => {
+        const label = labels.get(match.id) ?? `Match ${match.matchNumber}`;
+        const inUse = this.scrambleInUse(match, label, scrambleSets);
+        const decided = match.sets
+          .flatMap((set) => set.points)
+          .flatMap((point) => (point.decidedAt ? [point.decidedAt] : []));
+        const waitingSince =
+          decided.length > 0
+            ? new Date(Math.max(...decided.map((d) => d.getTime())))
+            : null;
+        return inUse
+          ? [
+              {
+                ...inUse,
+                label,
+                matchId: match.id,
+                matchNumber: match.matchNumber,
+                waitingSince,
+              },
+            ]
+          : [];
+      });
+    return new Map(
+      holdSharedScrambles(playing).map((entry) => [
+        entry.matchId,
+        {
+          setNumber: entry.setNumber,
+          pointNumber: entry.pointNumber,
+          scramble: entry.scramble,
+          text: entry.text,
+          warning: entry.warning,
+        },
+      ]),
+    );
   }
 
   /**

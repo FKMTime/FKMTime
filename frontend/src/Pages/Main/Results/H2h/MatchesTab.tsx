@@ -49,6 +49,7 @@ import {
     startMatch,
     withdrawFromMatch,
 } from "@/lib/h2h";
+import { AttemptStatus } from "@/lib/interfaces";
 import { resultToString } from "@/lib/resultFormatters";
 import { formatDayTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
@@ -217,6 +218,16 @@ const SetLog = ({
                                               ? names[point.winnerSide]
                                               : "No winner"}
                                     </span>
+                                    {[point.attemptA, point.attemptB].some(
+                                        (a) =>
+                                            a?.status ===
+                                            AttemptStatus.UNRESOLVED
+                                    ) && (
+                                        <span className="text-xs text-warning">
+                                            Incident open: the point waits for
+                                            the delegate
+                                        </span>
+                                    )}
                                     {point.afterEnd && (
                                         <span className="text-xs text-muted-foreground">
                                             Doesn't count: raced after the{" "}

@@ -11,6 +11,7 @@ import { getStationGroupIds } from 'src/device/stationRounds';
 import { isInTutorial, TUTORIAL_GROUP_ID } from 'src/device/tutorial';
 import { eventsData, getMaxPenalty } from 'src/events';
 import { isH2hRound } from 'src/h2h/h2hRound';
+import { nextPointOf, readyMatchOf } from 'src/h2h/matchStore';
 import {
   attemptTimeWithPenalty,
   checkCutoff,
@@ -33,6 +34,21 @@ import {
 
 import { Competition, HardwareVersion } from '../generated/prisma/client';
 import { PersonService } from './person.service';
+
+/**
+ * Whether the station runs its own inspection for a group: the event's
+ * setting, but never in a head-to-head round, where the announcer times
+ * inspection for both competitors (I4c)
+ */
+const useInspectionFor = (groupId: string, wcif: WCIF) =>
+  !isH2hRound(groupId.split('-g')[0], wcif) &&
+  (eventsData.find((e) => e.id === groupId.split('-')[0])?.useInspection ??
+    true);
+
+interface H2hScanRefusal {
+  key: 'h2hNoMatchInProgress' | 'h2hWaitingForDelegate';
+  shouldResetTime: boolean;
+}
 
 @Injectable()
 export class PersonForDeviceService {
@@ -127,6 +143,19 @@ export class PersonForDeviceService {
       wcif,
     );
 
+    // A head-to-head round takes a solve only into the competitor's playing
+    // match (SPEC-001): told at the scan, before they solve
+    const h2hRefusals = isCompetitor
+      ? await this.h2hScanRefusals(possibleGroups, wcif, person.id)
+      : new Map<string, H2hScanRefusal>();
+    const refuse = (refusal: H2hScanRefusal) => ({
+      message: getTranslation(refusal.key, person.countryIso2 ?? defaultLocale),
+      shouldResetTime: refusal.shouldResetTime,
+      status: 400,
+      error: true,
+      errorDetails: { key: refusal.key, competitorName: person.name },
+    });
+
     if (possibleGroups.length === 1) {
       const currentRoundId = possibleGroups[0].split('-g')[0];
       const currentEventId = currentRoundId.split('-r')[0];
@@ -146,6 +175,8 @@ export class PersonForDeviceService {
               )
             : finishedRoundsIds.includes(currentRoundId);
 
+          const h2hRefusal = h2hRefusals.get(currentRoundId);
+          if (h2hRefusal) return refuse(h2hRefusal);
           if (hasNoAttemptsLeft) {
             return {
               message: getTranslation(
@@ -168,9 +199,7 @@ export class PersonForDeviceService {
           possibleGroups: await Promise.all(
             possibleGroups.map(async (g) => ({
               groupId: g,
-              useInspection:
-                eventsData.find((e) => e.id === g.split('-')[0])
-                  ?.useInspection ?? true,
+              useInspection: useInspectionFor(g, wcif),
               maxPenalty: getMaxPenalty(g.split('-')[0]),
               ...(await this.computeSecondaryText(
                 g,
@@ -198,29 +227,71 @@ export class PersonForDeviceService {
           registeredEventIds.includes(eventId)
         );
       })
-      .filter((g) => !finishedRoundsIds.includes(g.split('-g')[0]))
-      .map(async (g) => {
-        const eventId = g.split('-')[0];
-        return {
-          groupId: g,
-          useInspection:
-            eventsData.find((e) => e.id === eventId)?.useInspection ?? true,
-          maxPenalty: getMaxPenalty(eventId),
-          ...(await this.computeSecondaryText(
-            g,
-            wcif,
-            person.id,
-            defaultLocale,
-            device.hwVersion,
-            cardId,
-          )),
-        };
-      });
+      .filter((g) => !finishedRoundsIds.includes(g.split('-g')[0]));
+    const offeredGroups = finalGroups.filter(
+      (g) => !h2hRefusals.has(g.split('-g')[0]),
+    );
+    // Only head-to-head rounds were left, and none can take a solve now
+    const [firstRefused] = finalGroups.flatMap(
+      (g) => h2hRefusals.get(g.split('-g')[0]) ?? [],
+    );
+    if (offeredGroups.length === 0 && firstRefused) {
+      return refuse(firstRefused);
+    }
+    const groups = offeredGroups.map(async (g) => {
+      const eventId = g.split('-')[0];
+      return {
+        groupId: g,
+        useInspection: useInspectionFor(g, wcif),
+        maxPenalty: getMaxPenalty(eventId),
+        ...(await this.computeSecondaryText(
+          g,
+          wcif,
+          person.id,
+          defaultLocale,
+          device.hwVersion,
+          cardId,
+        )),
+      };
+    });
     return {
       ...person,
       name: convertToLatin(person.name),
-      possibleGroups: await Promise.all(finalGroups),
+      possibleGroups: await Promise.all(groups),
     };
+  }
+
+  /**
+   * Why each head-to-head round among these groups can't take the
+   * competitor's solve now, by round id: no playing match, or the next
+   * point waits for an open incident. A station may let them solve before
+   * scanning, so the time is kept only when their match is ready and the
+   * stage leader just hasn't started it: it can go in once they have.
+   */
+  private async h2hScanRefusals(
+    groupIds: string[],
+    wcif: WCIF,
+    personId: string,
+  ) {
+    const roundIds = [...new Set(groupIds.map((g) => g.split('-g')[0]))];
+    const refusals = new Map<string, H2hScanRefusal>();
+    for (const roundId of roundIds) {
+      if (!isH2hRound(roundId, wcif)) continue;
+      const next = await nextPointOf(this.prisma, roundId, personId);
+      if (next?.waitingForDelegate) {
+        refusals.set(roundId, {
+          key: 'h2hWaitingForDelegate',
+          shouldResetTime: true,
+        });
+      } else if (!next) {
+        const ready = await readyMatchOf(this.prisma, roundId, personId);
+        refusals.set(roundId, {
+          key: 'h2hNoMatchInProgress',
+          shouldResetTime: ready === null,
+        });
+      }
+    }
+    return refusals;
   }
 
   /** The person with the one tutorial group, labelled in their language */
@@ -332,6 +403,26 @@ export class PersonForDeviceService {
     let limitToReturn: number | null = null;
 
     const roundInfo = getRoundInfoFromWcif(roundId, wcif);
+    // A head-to-head solve races the next point of the competitor's match,
+    // not a numbered attempt: "Set 1 Point 4"
+    if (isH2hRound(roundId, wcif)) {
+      const next = await nextPointOf(this.prisma, roundId, personId);
+      const limit = roundInfo?.timeLimit?.centiseconds
+        ? roundInfo.timeLimit.centiseconds * 10
+        : null;
+      if (!showsSecondaryText) {
+        return { name: eventText, secondaryText: eventText, limit };
+      }
+      return {
+        name: shortEventText,
+        secondaryText: next
+          ? getTranslation('h2hNextPoint', locale)
+              .replace('{0}', `${next.setNumber}`)
+              .replace('{1}', `${next.pointNumber}`)
+          : '',
+        limit,
+      };
+    }
     let cumulativeText = '';
     let cutoffText = '';
     const nextAttemptData = await this.resultService.getNextAttemptData(

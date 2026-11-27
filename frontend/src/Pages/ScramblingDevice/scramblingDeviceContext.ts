@@ -45,3 +45,10 @@ export const roundName = (roundId: string) =>
 /** "3x3x3 Cube · Round 1 · Set A" */
 export const scrambleSetName = (set: { roundId: string; set: string }) =>
     `${roundName(set.roundId)} · Set ${set.set}`;
+
+/**
+ * The page that scrambles a head-to-head match's next point, on the
+ * scramble set it races (SPEC-001)
+ */
+export const h2hScramblePath = (matchId: string, scrambleSetId: string) =>
+    `/scrambling-device/set/${scrambleSetId}?match=${matchId}`;

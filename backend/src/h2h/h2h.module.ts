@@ -18,6 +18,6 @@ import { H2hMatchActionsService } from './h2hMatchActions.service';
     forwardRef(() => SocketModule),
     forwardRef(() => CompetitionModule),
   ],
-  exports: [H2hMatchService],
+  exports: [H2hService, H2hMatchService],
 })
 export class H2hModule {}

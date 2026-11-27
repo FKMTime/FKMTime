@@ -1,4 +1,4 @@
-import { Result } from "./interfaces";
+import { AttemptStatus, Result } from "./interfaces";
 import { queryFamily, setQueryData } from "./queryCache";
 import { queryClient } from "./queryClient";
 import { attemptValue, RankedResult } from "./ranking";
@@ -90,6 +90,8 @@ export interface H2hPointAttempt {
     attemptNumber: number;
     value: number;
     penalty: number;
+    /** UNRESOLVED while an incident on it is open: the point waits */
+    status?: AttemptStatus;
 }
 
 export interface H2hPoint {

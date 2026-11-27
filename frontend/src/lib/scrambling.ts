@@ -1,5 +1,10 @@
-import { Scramble, ScrambleSet, ScramblingDeviceRoom } from "./interfaces";
-import { Query, queryFamily } from "./queryCache";
+import {
+    H2hMatchScramble,
+    Scramble,
+    ScrambleSet,
+    ScramblingDeviceRoom,
+} from "./interfaces";
+import { Query, QueryError, queryFamily } from "./queryCache";
 import { scramblingDeviceBackendRequest } from "./request";
 import { decryptText } from "./utils";
 
@@ -110,3 +115,22 @@ export const createScrambledAttempt = async (
         data: await response.json(),
     };
 };
+
+/** A head-to-head round's playing matches and their next scrambles */
+export const getH2hScrambles = async (
+    roundId: string
+): Promise<H2hMatchScramble[]> => {
+    const response = await scramblingDeviceBackendRequest(
+        `scrambling/h2h/${roundId}`,
+        "GET"
+    );
+    if (!response.ok) throw new QueryError(response.status);
+    return await response.json();
+};
+
+export const scramblingDeviceH2hQuery = queryFamily(
+    (roundId): Query<H2hMatchScramble[]> => ({
+        key: `scrambling/h2h/${roundId}`,
+        fetch: () => getH2hScrambles(roundId),
+    })
+);

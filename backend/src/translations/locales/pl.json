@@ -53,8 +53,48 @@
       "translation": "Runda zmieniona, zawolaj delegata"
     },
     {
-      "key": "h2hRoundNotOnStations",
-      "translation": "Runda head-to-head, zawolaj delegata"
+      "key": "h2hNoMatchInProgress",
+      "translation": "Brak meczu w toku"
+    },
+    {
+      "key": "h2hWaitingForOpponent",
+      "translation": "Czekaj na rywala"
+    },
+    {
+      "key": "h2hWaitingForDelegate",
+      "translation": "Czekaj na delegata"
+    },
+    {
+      "key": "h2hNoScrambleLeft",
+      "translation": "Brak scrambli"
+    },
+    {
+      "key": "h2hPointWon",
+      "translation": "Punkt wygrany"
+    },
+    {
+      "key": "h2hPointLost",
+      "translation": "Punkt przegrany"
+    },
+    {
+      "key": "h2hNoPoint",
+      "translation": "Brak punktu"
+    },
+    {
+      "key": "h2hMatchWon",
+      "translation": "Mecz wygrany"
+    },
+    {
+      "key": "h2hMatchLost",
+      "translation": "Mecz przegrany"
+    },
+    {
+      "key": "h2hScore",
+      "translation": "Set {0} Sety {1}"
+    },
+    {
+      "key": "h2hNextPoint",
+      "translation": "Set {0} Punkt {1}"
     },
     {
       "key": "attemptAlreadyEntered",

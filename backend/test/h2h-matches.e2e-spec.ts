@@ -626,7 +626,14 @@ describe('Head-to-head matches (e2e)', () => {
       await importSets(['C']);
       // The Matches tab names the scramble the point will take
       expect(matchOf(await getView(), 1).scrambleInUse).toEqual({
+        setNumber: 3,
         pointNumber: 1,
+        scramble: {
+          scrambleSetId: expect.any(String),
+          set: 'C',
+          num: 1,
+          isExtra: false,
+        },
         text: 'Semifinal 1 · set 3 · Set C, scramble 1',
         warning: null,
       });
