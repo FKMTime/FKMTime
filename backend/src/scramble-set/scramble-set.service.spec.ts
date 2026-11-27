@@ -20,7 +20,14 @@ describe('ScrambleSetService', () => {
               findMany: jest.fn(),
               delete: jest.fn(),
               deleteMany: jest.fn(),
+              findUnique: jest.fn().mockResolvedValue({ roundId: '333-r1' }),
             },
+            // No head-to-head bracket, so no scramble plan to match
+            h2hBracket: {
+              findUnique: jest.fn().mockResolvedValue(null),
+              findMany: jest.fn().mockResolvedValue([]),
+            },
+            $executeRaw: jest.fn(),
             // Runs the callback against this same mock, as a transaction client
             $transaction: jest.fn(function (callback) {
               return callback(this);

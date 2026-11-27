@@ -6,9 +6,12 @@ import {
     formatDocumentTitle,
     getInitials,
     getSubmittedAttempts,
+    letterToNumber,
+    numberToLetter,
     prettyAvailableDeviceType,
     prettyDeviceType,
     prettyGender,
+    prettyRoundFormat,
     prettyUserRoleName,
     regionNameByIso2,
 } from "@/lib/utils.ts";
@@ -128,5 +131,37 @@ describe("getSubmittedAttempts", () => {
         ]);
 
         expect(submitted.map((a) => a.id)).toEqual(["s1"]);
+    });
+});
+
+describe("scramble set letters", () => {
+    it.each([
+        [1, "A"],
+        [26, "Z"],
+        [27, "AA"],
+        [28, "AB"],
+        [52, "AZ"],
+        [53, "BA"],
+        [702, "ZZ"],
+        [703, "AAA"],
+    ])("letters set %i as %s and back", (number, letters) => {
+        expect(numberToLetter(number)).toBe(letters);
+        expect(letterToNumber(letters)).toBe(number);
+    });
+
+    it("gives every set up to 1000 its own letters, in order", () => {
+        const all = Array.from({ length: 1000 }, (_, i) =>
+            numberToLetter(i + 1)
+        );
+        expect(new Set(all).size).toBe(1000);
+        expect(all.map(letterToNumber)).toEqual(
+            Array.from({ length: 1000 }, (_, i) => i + 1)
+        );
+    });
+});
+
+describe("prettyRoundFormat", () => {
+    it("names a head-to-head round", () => {
+        expect(prettyRoundFormat("h")).toBe("Head to head");
     });
 });

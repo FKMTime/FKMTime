@@ -252,6 +252,19 @@ describe('IntegratedLiveRoundsService', () => {
       );
     });
 
+    it('neither opens nor suggests a head-to-head round', async () => {
+      competition.openRoundsAutomatically = true;
+      const wcifRounds = (
+        competition.wcif as { events: { rounds: object[] }[] }
+      ).events[0].rounds;
+      wcifRounds[1] = { ...wcifRounds[1], format: 'h' };
+
+      await service.onRoundStarted('333-r2');
+
+      expect(calls()).toEqual([]);
+      expect(appGateway.handleRoundShouldBeOpened).not.toHaveBeenCalled();
+    });
+
     it('does nothing when results go somewhere else', async () => {
       competition.wcaScoretakingSoftware = 'wca_live';
 
@@ -272,6 +285,19 @@ describe('IntegratedLiveRoundsService', () => {
       message: 'score taking is not finished in the previous round',
     });
     expect(sender.markRoundDirty).not.toHaveBeenCalled();
+  });
+
+  it('refuses to open a head-to-head round', async () => {
+    const wcifRounds = (competition.wcif as { events: { rounds: object[] }[] })
+      .events[0].rounds;
+    wcifRounds[1] = { ...wcifRounds[1], format: 'h' };
+
+    await expect(service.openRound('333-r2')).resolves.toEqual({
+      ok: false,
+      message:
+        'Head-to-head rounds are not sent to WCA Integrated Live Results',
+    });
+    expect(connection.authorizedFetch).not.toHaveBeenCalled();
   });
 
   it('lists people registered for the event who are not in the round yet', async () => {

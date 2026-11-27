@@ -23,7 +23,7 @@ import {
 } from "@/Components/ui/table";
 import { toast } from "@/hooks/useToast";
 import { CUTOFF_ALLOWED } from "@/lib/constants";
-import { roundFormats } from "@/lib/constants";
+import { UNOFFICIAL_ROUND_FORMATS } from "@/lib/constants";
 
 import {
     updateCumulativeLimit,
@@ -148,7 +148,7 @@ const RoundsManager = ({
                                     <SelectValue placeholder="Select format" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {roundFormats.map((format) => (
+                                    {UNOFFICIAL_ROUND_FORMATS.map((format) => (
                                         <SelectItem
                                             key={format.format}
                                             value={format.format}

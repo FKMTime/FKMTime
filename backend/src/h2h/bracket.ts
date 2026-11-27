@@ -26,7 +26,8 @@ export interface BracketMatch {
   b: BracketSlot;
 }
 
-const STAGE_LABELS: Record<H2hStage, string> = {
+/** How the stages are named to people (I2a) */
+export const STAGE_LABELS: Record<H2hStage, string> = {
   STAGE_OF_16: 'Stage of 16',
   STAGE_OF_12: 'Stage of 12',
   QUARTERFINAL: 'Quarterfinal',

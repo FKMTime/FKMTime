@@ -10,6 +10,13 @@ import {
   Role,
   SendingResultsFrequency,
 } from '../../src/generated/prisma/client';
+import { BRACKET_SIZES, getStages } from '../../src/h2h/bracket';
+import { createBracket } from '../../src/h2h/bracketStore';
+import { whyNoBracket } from '../../src/h2h/h2hRound';
+import {
+  seedFromPreviousRound,
+  suggestBracketSize,
+} from '../../src/h2h/seeding';
 import { wcifRoleToAttendanceRole } from '../../src/wcif-helpers';
 
 const prisma = new PrismaClient({
@@ -80,6 +87,8 @@ export async function seedDb() {
   );
 
   const adminPassword = sha512('admin');
+  // Points keep their attempts from being deleted with their people
+  await prisma.h2hBracket.deleteMany();
   // Stations from earlier testing stay unless removed: attendance and
   // attempts (deleted with their people) point at them, and they point at
   // rooms, all without a cascade
@@ -171,10 +180,64 @@ export async function seedDb() {
   await prisma.room.createMany({
     data: rooms,
   });
+  await seedH2hBracket(wcif);
   console.log(
     `Test database seeded with ${wcifPublic.id}, starting on ${generated.startDate}`,
   );
 }
+/**
+ * A bracket for the WCIF's head-to-head round, if it has one, so local and
+ * e2e environments have one. Seeds come from the previous round's ranking;
+ * without one (a fresh dummy competition has no results), the event's
+ * accepted registrants in registrant id order.
+ */
+export async function seedH2hBracket(wcif: Competition) {
+  const round = wcif.events
+    .flatMap((event) => event.rounds)
+    .find((r) => r.format === 'h' && whyNoBracket(r.id, wcif) === null);
+  if (!round) return;
+  const eventId = round.id.split('-r')[0];
+  const registrantIds = wcif.persons
+    .filter(
+      (person) =>
+        person.registration?.status === 'accepted' &&
+        person.registration.eventIds.includes(eventId as never),
+    )
+    .map((person) => person.registrantId)
+    .sort((x, y) => x - y);
+  const size =
+    suggestBracketSize(round.id, wcif) ??
+    [...BRACKET_SIZES].reverse().find((s) => s <= registrantIds.length);
+  if (size === undefined) return;
+  const fromRanking = seedFromPreviousRound(round.id, wcif, size).seeds;
+  const seeds =
+    fromRanking.length > 0
+      ? fromRanking
+      : registrantIds
+          .slice(0, size)
+          .map((registrantId) => ({ registrantId, tieBroken: false }));
+  const persons = await prisma.person.findMany({
+    where: { registrantId: { in: seeds.map((seed) => seed.registrantId) } },
+  });
+  await prisma.$transaction((db) =>
+    createBracket(db, {
+      roundId: round.id,
+      eventId,
+      size,
+      setsToWin: Object.fromEntries(getStages(size).map((stage) => [stage, 1])),
+      seeds: seeds.flatMap((seed) => {
+        const person = persons.find(
+          (p) => p.registrantId === seed.registrantId,
+        );
+        return person
+          ? [{ personId: person.id, seedTieBroken: seed.tieBroken }]
+          : [];
+      }),
+    }),
+  );
+  console.log(`Seeded a ${size}-competitor bracket for ${round.id}`);
+}
+
 /** Closes the seed's own connection (a test that imports seedDb must) */
 export const disconnectSeedDb = () => prisma.$disconnect();
 

@@ -21,6 +21,7 @@ import { DelegateGrantModule } from './delegate-grant/delegateGrant.module';
 import { DeviceModule } from './device/device.module';
 import { validate } from './env.validation';
 import { EventsModule } from './events/events.module';
+import { H2hModule } from './h2h/h2h.module';
 import { IncidentModule } from './incident/incident.module';
 import { ServerLogModule } from './logging/serverLog.module';
 import { LoggerMiddleware } from './middleware/logger.middleware';
@@ -76,6 +77,7 @@ import { WcaModule } from './wca/wca.module';
     ScramblingModule,
     IncidentModule,
     DelegateGrantModule,
+    H2hModule,
   ],
   exports: [AppGateway],
 })

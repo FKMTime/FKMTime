@@ -348,18 +348,29 @@ model H2hScrambleAssignment {
 
 - **Rows.** Creating the bracket adds one row for every set a match could
   need, 2X − 1 per match (first to X sets).
-- **Automatic matching.** "Match scrambles automatically" fills the rows in
-  match order, then set order, with the round's sets in letter order. With the
-  8-player example below, QF 1 gets A, QF 2 gets B, …, and the final gets
-  sets H, I and J for its sets 1–3. This runs on its own after scrambles are
+- **Automatic matching.** FKMTime fills the rows in match order, then set
+  order, with the round's sets in letter order; there is no button for it.
+  With the 8-player example below, QF 1 gets A, QF 2 gets B, …, and the
+  final gets sets H, I and J for its sets 1–3. This runs on its own after scrambles are
   imported, or after the bracket is created, whichever comes second.
 - **Editing the plan.** The **Scrambles** tab of the bracket setup shows the
   plan as a table (Match · Set · Scramble set), and each row can be changed
   to any set not used elsewhere. Rows already raced are locked.
+  - A row is raced once its match has opened that set (`H2hSet` exists).
+    A set raced anywhere, in the plan or as a spare, can't go to another
+    row.
+  - `PUT /h2h/:roundId/scrambles` takes only the changed rows, and checks
+    the plan as a whole after the change, so two rows can swap sets in one
+    request. A row can also be left without a set. The screen sends a swap
+    when a row picks a set another row has.
 - **Using the plan.** When an H2H set opens, it copies its row's set into
   `H2hSet.scrambleSetId`. Each new point takes the next unused scramble of
   that set (`H2hPoint.scrambleId`). The `@unique` constraints keep one TNoodle
   set in one H2H set, and one scramble in one point.
+
+- **Matching again.** Creating the bracket, importing scrambles for the
+  round and deleting any of its sets all match the plan again. Rows with a
+  set keep it, so a row emptied by deleting its set takes the first spare.
 
 **When a set runs out.** Points with no winner (I3d) can push a set to 7
 points, and an extra (11k1) adds more. Once the set's normal and extra
@@ -376,7 +387,8 @@ scrambles are used up:
 Σ (2X − 1) over the matches. Bracket setup shows the number with the
 instruction "Set the scramble set count for 333-r3 to N on the WCA website,
 then generate scrambles in TNoodle". A couple of spares on top are
-recommended. Unused sets never reach the CSV.
+recommended. The screen names the round as people read it ("3x3x3
+One-Handed, Round 2") rather than by its WCIF id. Unused sets never reach the CSV.
 
 | Bracket | Sets to win | Sets in the plan |
 |---|---|---|
@@ -392,6 +404,12 @@ recommended. Unused sets never reach the CSV.
 - **Warning:** a set with fewer than 5 normal scrambles. A 3–2 set would
   start using its extras.
 - **Error:** no sets at all.
+
+The plan check needs the bracket, so it applies once the bracket exists;
+before that only the other two run. "No sets at all" means the round is in
+the file with no sets. A file without the round at all keeps the usual
+"There are no scrambles for …" warning, so a file for the other events can
+still be imported.
 
 **On the day.** The staff Matches screen and the scrambling device show, for
 each playing match, which set is in use and which point's scramble is next
@@ -424,6 +442,35 @@ Seeding:
    the seed list by hand (drag to reorder, swap a competitor).
 
 Seeds can be edited until the first match starts. After that they are locked.
+
+How the seeding reads the WCIF:
+
+- **The previous round** is the H2H round's `participationRuleset` source
+  round, the last of its linked rounds for a dual round, or `<event>-r<n-1>`
+  in an older WCIF without a ruleset.
+- **Who advanced** follows the same source's `resultCondition`: a ranking
+  of N takes ranking ≤ N, a percentage takes ranking ≤ ⌊count × P / 100⌋,
+  and a result condition compares the best or the average with its value.
+  Only people with a successful single advance, and at most ⌊count × 0.75⌋
+  of the round (9p1); a tie that would cross that line drops out whole. The
+  bracket takes the top `size` of them after the tie-break.
+- **The size** defaults to N when the condition is a ranking of 4, 8, 12 or
+  16. Otherwise the delegate picks it.
+- **What the delegate is told.** Creating the bracket returns a notice when
+  the seeds need a person: no previous round or no ranking yet (the bracket
+  is created with no seeds), 9p1 cut the round short, fewer people advanced
+  than the bracket has places (create a smaller bracket instead: the empty
+  seeds can't go to people who didn't advance, and reserved places only
+  swap people within the advancing count), more did (the top ones are
+  taken), the round reserves places, or
+  someone in the ranking isn't in FKMTime.
+- **Statuses.** The bracket is `DRAFT` until every seed has a competitor,
+  then `SEEDED`. A match is `READY` once both its sides are known, otherwise
+  `WAITING`.
+- **Editing by hand.** `PUT /h2h/:roundId/seeds` takes the people in seed
+  order, at most `size` of them. "Tie broken randomly" stays only on people
+  who keep the seed the draw gave them. Anyone in FKMTime can be put in, for
+  reserved places; the screen offers the people registered for the event.
 
 Building the graph (I2c, I2f):
 
@@ -674,6 +721,7 @@ such as `10.20`.
 | `PUT /h2h/:roundId/seeds` | delegate/organiser | Reorder or replace entrants (until the first match starts) |
 | `PUT /h2h/:roundId` | delegate/organiser | Change `wcaRoundId`; change sets to win while no match of that stage has started |
 | `DELETE /h2h/:roundId` | delegate/organiser | Delete the bracket, only while no attempt is linked |
+| `PUT /h2h/:roundId/scrambles` | delegate/organiser | Change rows of the scramble plan (raced rows are locked) |
 | `POST /h2h/match/:id/start` | stage leader+ | Start a `READY` match |
 | `POST /h2h/match/:id/withdraw` | delegate | Walkover for one side before the match starts (body: side) |
 | `POST /h2h/match/:id/retire` | delegate | End a playing match for one side (body: side, comment) |
@@ -693,7 +741,12 @@ socket.io:
 
 ### Screens
 
-**Staff: round page for an H2H round.** It sits under the existing Results
+**Staff: round page for an H2H round.** Until the Matches and Ranking tabs
+are built, its tabs are Bracket, Scrambles (the plan table from
+*Scrambles*) and Results (the existing results table). The Matches tab comes
+with the station flow (rollout step 3).
+
+Once those are built, it sits under the existing Results
 tabs and has three tabs:
 
 - **Bracket:** the same bracket as the public view, plus setup (size, sets to
@@ -844,7 +897,8 @@ All copy uses task language: "Start match", "Extra granted", "Withdraw",
   `useInspection` for H2H groups.
 - **Delivery:** in PRs, each usable alone:
   1. Schema, `buildBracket`, scoring and ranking functions with unit tests.
-  2. Bracket setup and the staff Matches screen, with manual entry only.
+  2. Bracket setup: seeds, sets to win and the scramble plan. The staff
+     Matches screen moved to step 3, with the station flow.
   3. Station flow for H2H rounds.
   4. CSV export.
   5. Public bracket, scoreboard and TV.
@@ -854,3 +908,44 @@ All copy uses task language: "Start match", "Extra granted", "Withdraw",
   delegate".
 - **Revert:** drop the bracket tables. The round's `Result`/`Attempt` rows
   stay, and are still visible as plain attempts.
+
+## Decisions (2026-11-20)
+
+Agreed before the work was split into PRs. Where they differ from the text
+above, they win; each PR that builds a part updates its section.
+
+1. **The CSV export is built on the server.**
+   `POST /h2h/:roundId/export { password }` returns the file. The reason given
+   in *WCA CSV export* for decrypting in the browser doesn't hold:
+   `ScramblingService.unlockScrambleSet` already receives the password. The
+   password is used for that request only, and never stored or logged.
+2. **The ranking is computed in the backend only.** The H2H API responses
+   return each entrant's position and stage reached, and the frontend only
+   shows them. There is no shared package (as *Final ranking* says).
+3. **The dummy WCA's generated competition makes `333oh-r2` head-to-head**, on
+   by default. It is the final of 333oh, a bracket of about 12. Not `333-r3`:
+   `backend/test/round-flow.e2e-spec.ts` runs that one as a normal Ao5 round.
+   FKMTime's seed and tests find the H2H round in the WCIF (`format === 'h'`)
+   and never hard-code it.
+4. **No CI fallback for the dummy WCA.** CI pulls `maxidragon/dummy-wca:main`,
+   which gets the H2H final and the `results/:eventId` endpoint once the
+   dummy-wca change is merged. Until then, CI checks that fail only because of
+   that are accepted, and each PR names them. Everything else stays green.
+   (That change, maxidragon/dummy-wca#19, was merged on 2026-11-21, so CI has
+   the H2H final.)
+5. **Seeding comes from the WCIF.** It uses the previous round's
+   `results[].ranking`, limited to the people who advanced. If that ranking is
+   missing, the bracket is created unseeded with a clear message, and the
+   delegate orders it by hand. Ties are broken randomly on the server and
+   flagged (`seedTieBroken`).
+6. **Station reply text after an H2H solve** (16×2 LCD, ASCII only; the first
+   two words go on the top line):
+   - "Point won" / "Point lost" / "No point", then "Set 2-1 Sets 1-0".
+   - "Waiting for opponent" while the opponent's attempt for that point isn't
+     in.
+   - "Match won" / "Match lost", then the set score, when the match ends.
+   - "No match in progress" when the competitor has no playing match.
+   - Polish texts without diacritics, like the existing ones in
+     `backend/src/translations/locales/pl.json`.
+7. **Every PR is reviewed locally** until a review round finds nothing new,
+   before it is pushed.
