@@ -1,6 +1,6 @@
 # SPEC-001: Head-to-head rounds
 
-- **Status:** Accepted
+- **Status:** Implemented
 - **Created:** 2026-10-29
 - **Related:** WCA Regulations Article I, 9b7, 9f5b, 9f16, 9i4, 11k, 11l
   (version April 1, 2026); WCA website H2H import

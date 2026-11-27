@@ -50,7 +50,7 @@ PRs, the last one does.
 
 | Id | Title | Status |
 |----|-------|--------|
-| [SPEC-001](SPEC-001-head-to-head.md) | Head-to-head rounds | Accepted |
+| [SPEC-001](SPEC-001-head-to-head.md) | Head-to-head rounds | Implemented |
 | [SPEC-002](SPEC-002-extras-for-all-attempts.md) | Extras for all attempts so far | Implemented |
 | [SPEC-003](SPEC-003-frontend-data-fetching.md) | Shared data fetching in the frontend | Implemented |
 | [SPEC-004](SPEC-004-attendance-tags.md) | Attendance tags: left early, replaced by, no-show for the day | Implemented |
