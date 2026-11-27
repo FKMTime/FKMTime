@@ -2,9 +2,11 @@ import { HttpException, Injectable } from '@nestjs/common';
 import * as CryptoJS from 'crypto-js';
 import { sha512 } from 'js-sha512';
 import { DbService } from 'src/db/db.service';
+import { isH2hRound } from 'src/h2h/h2hRound';
 import { PersonService } from 'src/person/person.service';
 import { ResultService } from 'src/result/result.service';
 import { ResultFromDeviceService } from 'src/result/resultFromDevice.service';
+import { Competition } from 'wcif-helpers';
 
 import { DeviceType } from '../generated/prisma/client';
 import { CreateScrambledAttemptDto } from './dto/createScrambledAttempt.dto';
@@ -75,6 +77,7 @@ export class ScramblingService {
 
   async getScrambleData(token: string, cardId: string, roundId: string) {
     await this.verifyToken(token);
+    await this.refuseH2hRound(roundId);
     return this.resultService.getNextAttemptData(cardId, roundId);
   }
 
@@ -89,7 +92,30 @@ export class ScramblingService {
 
   async createScrambledAttempt(token: string, data: CreateScrambledAttemptDto) {
     await this.verifyToken(token);
+    await this.refuseH2hRound(data.roundId);
     return await this.resultFromDeviceService.createScrambledAttempt(data);
+  }
+
+  /**
+   * A head-to-head point's scramble comes from its match, not from the
+   * competitor's attempt count, so the device can't pick it yet (SPEC-001)
+   */
+  private async refuseH2hRound(roundId: string) {
+    const competition = await this.prisma.competition.findFirst({
+      select: { wcif: true },
+    });
+    if (
+      competition &&
+      isH2hRound(
+        roundId.split('-g')[0],
+        competition.wcif as unknown as Competition,
+      )
+    ) {
+      throw new HttpException(
+        "Head-to-head rounds aren't scrambled from this device yet. The Matches tab shows each point's scramble.",
+        400,
+      );
+    }
   }
 
   private async verifyToken(token: string) {

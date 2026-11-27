@@ -1,4 +1,5 @@
 import { DNF_VALUE, DNS_VALUE } from 'src/constants';
+import { isH2hRound } from 'src/h2h/h2hRound';
 import {
   attemptTimeWithPenalty,
   getCountingAttempts,
@@ -91,7 +92,12 @@ export const calculateGroupProgress = (
   attemptsByRegistrantId: Map<number, Attempt[]>,
 ): GroupProgress => {
   const roundId = groupId.split('-g')[0];
-  const maxAttempts = getNumberOfAttemptsForRound(roundId, wcif);
+  // A head-to-head competitor does as many attempts as their matches take,
+  // so nobody's count says they are done (SPEC-001)
+  const isH2h = isH2hRound(roundId, wcif);
+  const maxAttempts = isH2h
+    ? Infinity
+    : getNumberOfAttemptsForRound(roundId, wcif);
   const cutoff = getRoundInfoFromWcif(roundId, wcif)?.cutoff as
     Cutoff | undefined;
   const competitorIds = getGroupCompetitorIds(wcif, groupId);
@@ -109,11 +115,13 @@ export const calculateGroupProgress = (
       maxAttempts,
       cutoff,
     );
-    const competitorEntered = Math.min(counting.length, competitorExpected);
-    expected += competitorExpected;
+    const competitorEntered = isH2h
+      ? counting.length
+      : Math.min(counting.length, competitorExpected);
+    expected += isH2h ? competitorEntered : competitorExpected;
     entered += competitorEntered;
     if (competitorEntered >= competitorExpected) finished++;
-    if (cutoff && counting.length < cutoff.numberOfAttempts) {
+    if (isH2h || (cutoff && counting.length < cutoff.numberOfAttempts)) {
       expectedIsFinal = false;
     }
   }

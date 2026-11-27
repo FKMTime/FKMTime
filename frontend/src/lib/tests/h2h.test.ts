@@ -2,12 +2,15 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
     H2hBracket,
+    H2hEntrant,
     H2hPlanRow,
     planRowChanges,
+    rankH2hResults,
     sideLabel,
     updateSeeds,
     validateSetsToWin,
 } from "@/lib/h2h";
+import { Attempt, Result } from "@/lib/interfaces";
 
 describe("validateSetsToWin", () => {
     it("accepts a final to more sets than the third-place match", () => {
@@ -127,5 +130,59 @@ describe("updateSeeds without a connection", () => {
         } finally {
             fetch.mockRestore();
         }
+    });
+});
+
+describe("rankH2hResults", () => {
+    const result = (personId: string, name: string, values: number[]) =>
+        ({
+            id: `result-${personId}`,
+            person: { id: personId, name },
+            attempts: values.map((value, i) => ({
+                id: `${personId}-${i}`,
+                attemptNumber: i + 1,
+                type: "STANDARD_ATTEMPT",
+                status: "STANDARD",
+                value,
+                penalty: 0,
+                replacedBy: null,
+            })) as unknown as Attempt[],
+        }) as unknown as Result;
+    const entrant = (
+        personId: string,
+        position: number | null,
+        stageReached: H2hEntrant["stageReached"]
+    ) => ({ person: { id: personId }, position, stageReached }) as H2hEntrant;
+
+    it("orders by the bracket's positions, then the rest by best single", () => {
+        // Invented competitors
+        const rows = rankH2hResults(
+            [
+                result("still-in", "Eve Still", [900]),
+                result("third", "Fay Third", [1300]),
+                result("first", "Gus First", [1100, 1000]),
+                result("slow", "Hal Slow", [1500]),
+            ],
+            [
+                entrant("first", 1, "FINAL"),
+                entrant("third", 3, "THIRD_PLACE"),
+                entrant("still-in", null, "SEMIFINAL"),
+                entrant("slow", null, "SEMIFINAL"),
+            ]
+        );
+
+        expect(
+            rows.map((ranked) => [
+                ranked.result.person.name,
+                ranked.position,
+                ranked.stageReached,
+                ranked.average,
+            ])
+        ).toEqual([
+            ["Gus First", 1, "FINAL", null],
+            ["Fay Third", 3, "THIRD_PLACE", null],
+            ["Eve Still", null, "SEMIFINAL", null],
+            ["Hal Slow", null, "SEMIFINAL", null],
+        ]);
     });
 });

@@ -3,6 +3,7 @@ import * as CryptoJS from 'crypto-js';
 import { sha512 } from 'js-sha512';
 import { DbService } from 'src/db/db.service';
 import * as request from 'supertest';
+import { Competition } from 'wcif-helpers';
 
 import {
   AttemptStatus,
@@ -467,6 +468,38 @@ describe('Scrambling device flow (e2e)', () => {
           `/scrambling/scramble/e2e-no-such-card/${ROUND_ID}`,
         ),
       ).expect(404);
+    });
+
+    it("refuses a head-to-head round, whose scramble comes from the point's match", async () => {
+      const competition = found(
+        await db.competition.findFirst(),
+        'competition',
+      );
+      const h2hRoundId = found(
+        (competition.wcif as unknown as Competition).events
+          .flatMap((event) => event.rounds)
+          .find((round) => round.format === 'h'),
+        'a head-to-head round',
+      ).id;
+
+      const res = await asDevice(
+        request(server()).get(`/scrambling/scramble/${CARD_ID}/${h2hRoundId}`),
+      ).expect(400);
+      expect(res.body.message).toMatch(/^Head-to-head rounds aren't scrambled/);
+      await asDevice(request(server()).post('/scrambling/scramble'))
+        .send({
+          personId: competitor.id,
+          scramblerId: scrambler.id,
+          roundId: h2hRoundId,
+          attemptNumber: 1,
+          isExtra: false,
+        })
+        .expect(400);
+      expect(
+        await db.attempt.count({
+          where: { result: { roundId: h2hRoundId, personId: competitor.id } },
+        }),
+      ).toBe(0);
     });
 
     it('rejects a scrambled attempt with an invalid round id', async () => {

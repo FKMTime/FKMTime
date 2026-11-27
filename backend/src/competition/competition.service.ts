@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { AppGateway } from 'src/app.gateway';
+import { isH2hRound } from 'src/h2h/h2hRound';
 import { ResultService } from 'src/result/result.service';
 import { getOfficialResultsDestination } from 'src/results-destination';
 import {
@@ -891,7 +892,11 @@ export class CompetitionService implements OnModuleDestroy {
       ),
       roomRoundGroupIds,
       rules: {
-        maxAttempts: getNumberOfAttemptsForRound(roundId, wcif),
+        // A head-to-head competitor is never done by count: the group
+        // waits for the delegate to move on (SPEC-001)
+        maxAttempts: isH2hRound(roundId, wcif)
+          ? Infinity
+          : getNumberOfAttemptsForRound(roundId, wcif),
         cutoff: getRoundInfoFromWcif(roundId, wcif)?.cutoff,
         freshSetGrantIds: round.freshSetGrantIds,
         hasNextGroup,

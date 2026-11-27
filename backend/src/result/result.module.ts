@@ -2,6 +2,7 @@ import { forwardRef, Module } from '@nestjs/common';
 import { AppModule } from 'src/app.module';
 import { AttemptEditLogModule } from 'src/attempt-edit-log/attempt-edit-log.module';
 import { ContestsModule } from 'src/contests/contests.module';
+import { H2hModule } from 'src/h2h/h2h.module';
 
 import { AttemptModule } from '../attempt/attempt.module';
 import { AttendanceModule } from '../attendance/attendance.module';
@@ -34,6 +35,7 @@ import { TutorialFromDeviceService } from './tutorialFromDevice.service';
     AttemptEditLogModule,
     forwardRef(() => AppModule),
     forwardRef(() => CompetitionModule),
+    H2hModule,
   ],
   exports: [ResultService, ResultFromDeviceService],
 })

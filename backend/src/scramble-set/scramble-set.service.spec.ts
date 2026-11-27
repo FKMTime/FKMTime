@@ -1,7 +1,9 @@
 import { HttpException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
+import { AppGateway } from '../app.gateway';
 import { DbService } from '../db/db.service';
+import { H2hMatchService } from '../h2h/h2hMatch.service';
 import { ScrambleSetService } from './scramble-set.service';
 
 describe('ScrambleSetService', () => {
@@ -12,6 +14,12 @@ describe('ScrambleSetService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ScrambleSetService,
+        // No set is raced in a head-to-head match
+        {
+          provide: H2hMatchService,
+          useValue: { assertSetsNotRaced: jest.fn() },
+        },
+        { provide: AppGateway, useValue: { handleH2hUpdated: jest.fn() } },
         {
           provide: DbService,
           useValue: {

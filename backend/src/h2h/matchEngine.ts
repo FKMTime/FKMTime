@@ -1,0 +1,229 @@
+/**
+ * The pure parts of running a match (SPEC-001, Running a match on
+ * competition day): where an attempt goes, which scramble a new point races,
+ * and what the points so far decide. H2hMatchService reads and writes the
+ * rows around them.
+ */
+import { H2hSetDecision, H2hSide } from '../generated/prisma/client';
+import { decideMatch, decidePoint, decideSet, PlayedPoint } from './scoring';
+
+export const WAITING_FOR_OPPONENT = "Waiting for opponent's result";
+
+/** A refusal a person can act on; the service turns it into a 409 */
+export class MatchConflict extends Error {}
+
+export const otherSide = (side: H2hSide): H2hSide =>
+  side === H2hSide.A ? H2hSide.B : H2hSide.A;
+
+/** A point of the current set: which sides have an attempt in it */
+export interface PointSlots {
+  pointNumber: number;
+  a: boolean;
+  b: boolean;
+}
+
+export type Placement =
+  | { kind: 'fill'; pointNumber: number }
+  | { kind: 'new'; pointNumber: number }
+  /** The competitor is a point ahead already: a second would be two */
+  | { kind: 'ahead' };
+
+/**
+ * Where a competitor's next attempt goes in the current set: their first
+ * empty slot, or a new point when every point has their attempt. A
+ * competitor may be at most one point ahead of their opponent, so an
+ * attempt that would put them two ahead has nowhere to go.
+ */
+export const placeAttempt = (
+  points: PointSlots[],
+  side: H2hSide,
+): Placement => {
+  const has = (point: PointSlots, s: H2hSide) =>
+    s === H2hSide.A ? point.a : point.b;
+  const mine = points.filter((point) => has(point, side)).length;
+  const theirs = points.filter((point) => has(point, otherSide(side))).length;
+  if (mine > theirs) return { kind: 'ahead' };
+  const sorted = [...points].sort((x, y) => x.pointNumber - y.pointNumber);
+  const empty = sorted.find((point) => !has(point, side));
+  if (empty) return { kind: 'fill', pointNumber: empty.pointNumber };
+  const last = sorted[sorted.length - 1];
+  return { kind: 'new', pointNumber: last ? last.pointNumber + 1 : 1 };
+};
+
+export interface ScrambleOption {
+  id: string;
+  num: number;
+  isExtra: boolean;
+  /** Raced on a point already */
+  used: boolean;
+}
+
+export interface ScrambleSetOption {
+  id: string;
+  /** The set's letter: "A", "B", … */
+  set: string;
+  scrambles: ScrambleOption[];
+}
+
+export interface ChosenScramble {
+  id: string;
+  num: number;
+  isExtra: boolean;
+  scrambleSetId: string;
+  set: string;
+  /** Taken from a set outside the plan, as the set's own ran out */
+  fromSpare: boolean;
+}
+
+/** Normal scrambles in order, then extras in order */
+const inRaceOrder = (scrambles: ScrambleOption[]) =>
+  [...scrambles].sort(
+    (x, y) => Number(x.isExtra) - Number(y.isExtra) || x.num - y.num,
+  );
+
+/** Letter order, shorter letters first, so "AA" comes after "Z" */
+const byLetter = (x: ScrambleSetOption, y: ScrambleSetOption) =>
+  x.set.length - y.set.length || x.set.localeCompare(y.set);
+
+/**
+ * The scramble a new point races: the next unused one of the H2H set's own
+ * scramble set (normal scrambles, then extras), then of the first spare set
+ * (one not in the plan). Null when none is left anywhere.
+ */
+export const nextScramble = (
+  own: ScrambleSetOption | null,
+  spares: ScrambleSetOption[],
+): ChosenScramble | null => {
+  const pick = (set: ScrambleSetOption, fromSpare: boolean) => {
+    const scramble = inRaceOrder(set.scrambles).find((s) => !s.used);
+    return scramble
+      ? {
+          id: scramble.id,
+          num: scramble.num,
+          isExtra: scramble.isExtra,
+          scrambleSetId: set.id,
+          set: set.set,
+          fromSpare,
+        }
+      : null;
+  };
+  const fromOwn = own ? pick(own, false) : null;
+  if (fromOwn) return fromOwn;
+  for (const spare of [...spares].sort(byLetter)) {
+    const fromSpare = pick(spare, true);
+    if (fromSpare) return fromSpare;
+  }
+  return null;
+};
+
+/** A point as stored: each side's WCA-encoded result, or null while missing */
+export interface ScoredPointInput {
+  pointNumber: number;
+  a: number | null;
+  b: number | null;
+}
+
+export interface ScoredSetInput {
+  setNumber: number;
+  points: ScoredPointInput[];
+}
+
+export interface MatchInput {
+  setsToWin: number;
+  seeds: { a: number; b: number };
+  /** The match's sets so far, in order */
+  sets: ScoredSetInput[];
+  /** Each side's results in the round's other matches */
+  otherMatchResults: { a: number[]; b: number[] };
+}
+
+export interface SetScore {
+  setNumber: number;
+  /** Winners of the points with both attempts in, by point number */
+  pointWinners: Map<number, H2hSide | null>;
+  outcome: { winner: H2hSide; decidedBy: H2hSetDecision } | null;
+}
+
+export interface MatchScore {
+  sets: SetScore[];
+  winner: H2hSide | null;
+  /** The set to open next, when the last one is over and the match isn't */
+  nextSetNumber: number | null;
+}
+
+const resultsOf = (sets: ScoredSetInput[], side: 'a' | 'b') =>
+  sets.flatMap((set) =>
+    set.points.flatMap((point) => (point[side] === null ? [] : [point[side]])),
+  );
+
+/**
+ * What the match's points decide: every point's winner (I3c, I3d), each
+ * set's (I3b, I3e) and the match's (I3a). Re-run after any attempt in an
+ * unfinished match changes, so a typo fixed mid-match re-decides it.
+ * Throws a MatchConflict when the points no longer fit the sets played:
+ * points after a set would have ended, or a set started after one that
+ * would still be going on.
+ */
+export const scoreMatch = (input: MatchInput): MatchScore => {
+  const sets: SetScore[] = [];
+  input.sets.forEach((set, index) => {
+    const isLast = index === input.sets.length - 1;
+    const sorted = [...set.points].sort(
+      (x, y) => x.pointNumber - y.pointNumber,
+    );
+    const pointWinners = new Map<number, H2hSide | null>();
+    const played: PlayedPoint[] = [];
+    const matchSoFar = input.sets.slice(0, index + 1);
+    const matchResults = {
+      a: resultsOf(matchSoFar, 'a'),
+      b: resultsOf(matchSoFar, 'b'),
+    };
+    let outcome: SetScore['outcome'] = null;
+    for (const [i, point] of sorted.entries()) {
+      if (point.a === null || point.b === null) continue;
+      const winner = decidePoint(point.a, point.b);
+      pointWinners.set(point.pointNumber, winner);
+      played.push({ a: point.a, b: point.b, winner });
+      if (outcome) continue;
+      outcome = decideSet({
+        points: played,
+        matchResults,
+        roundResults: {
+          a: [...input.otherMatchResults.a, ...matchResults.a],
+          b: [...input.otherMatchResults.b, ...matchResults.b],
+        },
+        seeds: input.seeds,
+      });
+      if (outcome && i < sorted.length - 1) {
+        throw new MatchConflict(
+          `Set ${set.setNumber} would be over after point ${point.pointNumber}, but point ${sorted[i + 1].pointNumber} has a result too. Check the times.`,
+        );
+      }
+    }
+    if (!outcome && !isLast) {
+      throw new MatchConflict(
+        `Set ${set.setNumber} would not be over yet, but set ${input.sets[index + 1].setNumber} has started. Check the times.`,
+      );
+    }
+    sets.push({ setNumber: set.setNumber, pointWinners, outcome });
+  });
+
+  let winner: H2hSide | null = null;
+  for (const [index, set] of sets.entries()) {
+    winner = decideMatch(
+      sets.slice(0, index + 1).map((s) => s.outcome?.winner ?? null),
+      input.setsToWin,
+    );
+    if (winner && index < sets.length - 1) {
+      throw new MatchConflict(
+        `The match would be over after set ${set.setNumber}, but set ${sets[index + 1].setNumber} has been played. Check the times.`,
+      );
+    }
+  }
+  const last = sets[sets.length - 1];
+  return {
+    sets,
+    winner,
+    nextSetNumber: winner === null && last?.outcome ? last.setNumber + 1 : null,
+  };
+};

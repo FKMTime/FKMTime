@@ -1,13 +1,33 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {
+  forwardRef,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { activityCodeToName } from '@wca/helpers';
+import { AppGateway } from 'src/app.gateway';
 import { DbService } from 'src/db/db.service';
 import { lockBracket, rematchScramblePlan } from 'src/h2h/bracketStore';
+import { H2hMatchService } from 'src/h2h/h2hMatch.service';
 
 import { ImportScramblesDto } from './dto/import-scrambles.dto';
 
 @Injectable()
 export class ScrambleSetService {
-  constructor(private readonly prisma: DbService) {}
+  constructor(
+    private readonly prisma: DbService,
+    private readonly h2hMatchService: H2hMatchService,
+    @Inject(forwardRef(() => AppGateway))
+    private readonly appGateway: AppGateway,
+  ) {}
+
+  /** A head-to-head round's plan may have changed (SPEC-001) */
+  private planChanged(roundIds: Iterable<string>) {
+    for (const roundId of new Set(roundIds)) {
+      this.appGateway.handleH2hUpdated(roundId);
+    }
+  }
 
   async importScrambles(data: ImportScramblesDto) {
     // All or nothing: a duplicate set rolls back the sets imported before it
@@ -48,6 +68,7 @@ export class ScrambleSetService {
       },
       { timeout: 60_000 },
     );
+    this.planChanged(data.scrambleSets.map((set) => set.roundId));
     return {
       message: 'Scrambles imported successfully',
     };
@@ -88,7 +109,7 @@ export class ScrambleSetService {
   }
 
   async deleteScrambleSet(id: string) {
-    await this.prisma.$transaction(async (tx) => {
+    const deleted = await this.prisma.$transaction(async (tx) => {
       const set = await tx.scrambleSet.findUnique({
         where: { id },
         select: { roundId: true },
@@ -96,6 +117,7 @@ export class ScrambleSetService {
       // Before the delete clears its plan row, in the order a plan edit
       // takes them, so the two can't deadlock
       if (set) await lockBracket(tx, set.roundId);
+      await this.h2hMatchService.assertSetsNotRaced(tx, [id]);
       // An unknown id throws P2025, which the global filter turns into a 404
       await tx.scrambleSet.delete({
         where: {
@@ -104,7 +126,9 @@ export class ScrambleSetService {
       });
       // The plan row it was in takes a spare set, if there is one
       if (set) await rematchScramblePlan(tx, set.roundId);
+      return set;
     });
+    if (deleted) this.planChanged([deleted.roundId]);
     return {
       message: 'Scramble set deleted successfully',
     };
@@ -113,6 +137,14 @@ export class ScrambleSetService {
   async deleteScrambleSetsByRoundId(roundId: string) {
     await this.prisma.$transaction(async (tx) => {
       await lockBracket(tx, roundId);
+      const sets = await tx.scrambleSet.findMany({
+        where: { roundId },
+        select: { id: true },
+      });
+      await this.h2hMatchService.assertSetsNotRaced(
+        tx,
+        sets.map((set) => set.id),
+      );
       await tx.scrambleSet.deleteMany({
         where: {
           roundId,
@@ -120,23 +152,31 @@ export class ScrambleSetService {
       });
       await rematchScramblePlan(tx, roundId);
     });
+    this.planChanged([roundId]);
     return {
       message: 'Scramble sets deleted successfully',
     };
   }
 
   async deleteAllScrambleSets() {
-    await this.prisma.$transaction(async (tx) => {
-      const brackets = await tx.h2hBracket.findMany({
+    const brackets = await this.prisma.$transaction(async (tx) => {
+      const roundBrackets = await tx.h2hBracket.findMany({
         select: { roundId: true },
         orderBy: { roundId: 'asc' },
       });
-      for (const { roundId } of brackets) await lockBracket(tx, roundId);
+      for (const { roundId } of roundBrackets) await lockBracket(tx, roundId);
+      const sets = await tx.scrambleSet.findMany({ select: { id: true } });
+      await this.h2hMatchService.assertSetsNotRaced(
+        tx,
+        sets.map((set) => set.id),
+      );
       await tx.scrambleSet.deleteMany();
-      for (const { roundId } of brackets) {
+      for (const { roundId } of roundBrackets) {
         await rematchScramblePlan(tx, roundId);
       }
+      return roundBrackets;
     });
+    this.planChanged(brackets.map((bracket) => bracket.roundId));
     return {
       message: 'All scramble sets deleted successfully',
     };

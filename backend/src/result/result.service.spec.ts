@@ -2,6 +2,7 @@ import { AppGateway } from 'src/app.gateway';
 import { AttemptEditLogService } from 'src/attempt-edit-log/attempt-edit-log.service';
 import { CompetitionService } from 'src/competition/competition.service';
 import { DbService } from 'src/db/db.service';
+import { H2hMatchService } from 'src/h2h/h2hMatch.service';
 import { PersonService } from 'src/person/person.service';
 import { WcaService } from 'src/wca/wca.service';
 
@@ -19,6 +20,10 @@ import { ResultService } from './result.service';
 const competitionStub = {
   requestGroupChangeCheck: jest.fn(),
 } as unknown as CompetitionService;
+
+/** No attempt here was raced on a head-to-head point */
+const noH2hPoints = () =>
+  ({ assertNotRaced: jest.fn() }) as unknown as H2hMatchService;
 
 describe('ResultService staffing checks', () => {
   const competed = {
@@ -58,7 +63,7 @@ describe('ResultService staffing checks', () => {
         }),
       },
       competition: {
-        findFirstOrThrow: jest.fn().mockResolvedValue({ wcif: {} }),
+        findFirstOrThrow: jest.fn().mockResolvedValue({ wcif: { events: [] } }),
       },
       staffActivity: {
         findMany: jest.fn().mockResolvedValue(
@@ -82,6 +87,7 @@ describe('ResultService staffing checks', () => {
       unusedDependency(),
       competitionStub,
       storedWcifFrom(prisma),
+      noH2hPoints(),
     );
   });
 
@@ -121,6 +127,31 @@ describe('ResultService staffing checks', () => {
           },
         }),
       );
+    },
+  );
+
+  it.each([
+    ['a', 1],
+    ['h', 0],
+  ])(
+    'flags inspection over 15 seconds only outside head-to-head rounds (format %s)',
+    async (format, flagged) => {
+      prisma.competition.findFirstOrThrow.mockResolvedValue({
+        wcif: {
+          events: [{ id: '333oh', rounds: [{ id: '333oh-r2', format }] }],
+        },
+      });
+      // No inspection penalties in a head-to-head round (I4c6)
+      const slow = {
+        ...competed,
+        inspectionTime: 16000,
+        result: { ...competed.result, roundId: '333oh-r2' },
+      };
+      prisma.attempt.findMany
+        .mockResolvedValue([])
+        .mockResolvedValueOnce([slow]);
+      const checks = await service.getResultsChecks('333oh-r2');
+      expect(checks).toHaveLength(flagged);
     },
   );
 
@@ -177,6 +208,7 @@ describe('ResultService submitted attempts', () => {
       unusedDependency(),
       competitionStub,
       unusedDependency(),
+      noH2hPoints(),
     );
   });
 
@@ -261,6 +293,7 @@ describe('ResultService cumulative time limit of a result', () => {
       unusedDependency(),
       competitionStub,
       storedWcifOf({ events: [{ id: '333mbf', rounds }] }),
+      noH2hPoints(),
     );
 
   // Multi-blind has no time limit in the WCIF: its timeLimit is null
@@ -341,6 +374,7 @@ describe('ResultService settling waiting extras', () => {
       unusedDependency(),
       competitionStub,
       storedWcifFrom(prisma),
+      noH2hPoints(),
     );
     return {
       voided: await service.settleWaitingExtras('result-1'),
@@ -407,6 +441,7 @@ describe('ResultService next attempt during a redo', () => {
       unusedDependency(),
       competitionStub,
       unusedDependency(),
+      noH2hPoints(),
     );
     jest
       .spyOn(service, 'getResultOrCreate')
@@ -491,6 +526,7 @@ describe('ResultService results to double check', () => {
       unusedDependency(),
       competitionStub,
       unusedDependency(),
+      noH2hPoints(),
     );
 
     const data = await service.getResultsToDoubleCheckByRoundId('333-r1');
@@ -546,6 +582,7 @@ describe('ResultService removing a result (Regulation 9t)', () => {
       unusedDependency(),
       competitionStub,
       storedWcifFrom(prisma),
+      noH2hPoints(),
     );
     sent = jest.fn();
     service.sendResult = sent;
@@ -656,6 +693,7 @@ describe('ResultService deleting a result', () => {
           personId: 'person-1',
           roundId: '333-r1',
           person: { wcaRegistrationId: null },
+          attempts: [],
         })),
         delete: jest.fn(),
       },
@@ -701,6 +739,7 @@ describe('ResultService deleting a result', () => {
       unusedDependency(),
       competitionStub,
       storedWcifFrom(prisma),
+      noH2hPoints(),
     );
   });
 
@@ -764,6 +803,7 @@ describe('ResultService assigning DNS to the remaining attempts', () => {
       unusedDependency(),
       competitionStub,
       storedWcifFrom(prisma),
+      noH2hPoints(),
     );
     jest.spyOn(service, 'getResultById').mockResolvedValue({
       id: 'result-1',
@@ -826,6 +866,7 @@ describe('ResultService sending where the WCA setting says', () => {
       integratedLiveService as never,
       competitionStub,
       storedWcifFrom(prisma),
+      noH2hPoints(),
     );
     service.getResultById = jest.fn().mockResolvedValue({
       id: 'result-1',

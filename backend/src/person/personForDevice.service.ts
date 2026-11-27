@@ -10,6 +10,7 @@ import { DeviceService } from 'src/device/device.service';
 import { getStationGroupIds } from 'src/device/stationRounds';
 import { isInTutorial, TUTORIAL_GROUP_ID } from 'src/device/tutorial';
 import { eventsData, getMaxPenalty } from 'src/events';
+import { isH2hRound } from 'src/h2h/h2hRound';
 import {
   attemptTimeWithPenalty,
   checkCutoff,
@@ -286,6 +287,9 @@ export class PersonForDeviceService {
       const roundInfo = getRoundInfoFromWcif(result.roundId, wcif);
       // A round the WCIF no longer has can't be finished in it
       if (!roundInfo) continue;
+      // A head-to-head round ends with the competitor's matches, not after a
+      // number of attempts (SPEC-001)
+      if (isH2hRound(result.roundId, wcif)) continue;
       let maxAttempts = getMaxAttempts(roundInfo.format);
       if (roundInfo.cutoff) {
         const cutoffPassed = checkCutoff(

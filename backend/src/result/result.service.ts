@@ -22,6 +22,7 @@ import { ContestsService } from 'src/contests/contests.service';
 import { DbService, INCLUDING_REMOVED, Tx } from 'src/db/db.service';
 import { StoredWcifService } from 'src/db/storedWcif.service';
 import { isUnofficialEvent } from 'src/events';
+import { H2hMatchService } from 'src/h2h/h2hMatch.service';
 import { isH2hRound } from 'src/h2h/h2hRound';
 import { IntegratedLiveService } from 'src/integrated-live/integratedLive.service';
 import { PersonService } from 'src/person/person.service';
@@ -72,6 +73,7 @@ export class ResultService {
     @Inject(forwardRef(() => CompetitionService))
     private readonly competitionService: CompetitionService,
     private readonly storedWcif: StoredWcifService,
+    private readonly h2hMatchService: H2hMatchService,
   ) {}
 
   /** Results as anyone may read them, the public results page included */
@@ -236,11 +238,19 @@ export class ResultService {
       where: {
         id: id,
       },
-      include: { person: { select: { wcaRegistrationId: true } } },
+      include: {
+        person: { select: { wcaRegistrationId: true } },
+        attempts: { select: { id: true } },
+      },
     });
     if (!result) {
       throw new HttpException('Result not found', 404);
     }
+    await this.h2hMatchService.assertNotRaced(
+      this.prisma,
+      result.attempts.map((attempt) => attempt.id),
+      'This result',
+    );
     // The exact `${roundId}-g` prefix: "333-r1" alone also matches 333-r10
     const competingActivities = await this.prisma.staffActivity.findMany({
       where: {
@@ -561,8 +571,16 @@ export class ResultService {
         },
         roundId: roundId,
       },
-      include: { person: { select: { wcaRegistrationId: true } } },
+      include: {
+        person: { select: { wcaRegistrationId: true } },
+        attempts: { select: { id: true } },
+      },
     });
+    await this.h2hMatchService.assertNotRaced(
+      this.prisma,
+      results.flatMap((result) => result.attempts.map((a) => a.id)),
+      'The group',
+    );
     // A no-show is about the day, so it outlives the restart
     await this.prisma.staffActivity.updateMany({
       where: {
@@ -601,6 +619,13 @@ export class ResultService {
     const roundInfo = eventInfo.rounds.find(
       (round: Round) => round.id === result.roundId,
     );
+    // A head-to-head round has no fixed number of attempts to fill
+    if (isH2hRound(result.roundId, wcif)) {
+      throw new HttpException(
+        'Head-to-head rounds have no remaining attempts: each point is played in its match',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
     const maxAttempts = getMaxAttempts(roundInfo.format);
     const sortedAttempts = getSortedStandardAttempts(attempts);
     // A result made only of DNS is not a valid result: delete it instead
@@ -647,7 +672,14 @@ export class ResultService {
     const competition = await this.prisma.competition.findFirstOrThrow();
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
     const roundInfo = getRoundInfoFromWcif(roundId, wcif);
-    const maxAttempts = getNumberOfAttemptsForRound(roundId, wcif);
+    // A head-to-head competitor has as many attempts as their matches took,
+    // and is done once they have no match left to play: until then their
+    // result still grows, and a playing match's times are edited there
+    const isH2h = isH2hRound(roundId, wcif);
+    const maxAttempts = isH2h ? 0 : getNumberOfAttemptsForRound(roundId, wcif);
+    const stillPlaying = isH2h
+      ? await this.h2hMatchService.personsStillPlaying(this.prisma, roundId)
+      : new Set<string>();
 
     const allResults = await this.prisma.result.findMany({
       where: {
@@ -658,6 +690,7 @@ export class ResultService {
     });
 
     const results = allResults.filter((result) => {
+      if (stillPlaying.has(result.personId)) return false;
       const submitted = getCountingAttempts(result.attempts);
       if (submitted.length === 0) return false;
       if (result.attempts.some((a) => a.status === AttemptStatus.UNRESOLVED))
@@ -699,6 +732,16 @@ export class ResultService {
   }
 
   async doubleCheckResult(data: DoubleCheckDto, userId: string) {
+    // A time in a match still playing would change without re-deciding it
+    for (const attempt of data.attempts) {
+      const point = await this.h2hMatchService.pointOf(this.prisma, attempt.id);
+      if (point && point.set.match.status !== 'FINISHED') {
+        throw new HttpException(
+          'This result has attempts in a match still playing. Double check it once the competitor has no match left.',
+          HttpStatus.CONFLICT,
+        );
+      }
+    }
     const result = await this.prisma.result.update({
       where: {
         id: data.resultId,
@@ -831,16 +874,19 @@ export class ResultService {
     }
     const competition = await this.prisma.competition.findFirstOrThrow();
     const wcif = JSON.parse(JSON.stringify(competition.wcif));
-    const exceededInspection = await this.prisma.attempt.findMany({
-      where: {
-        inspectionTime: {
-          gt: 15000,
+    // Head-to-head rounds have no inspection penalties (I4c6)
+    const exceededInspection = (
+      await this.prisma.attempt.findMany({
+        where: {
+          inspectionTime: {
+            gt: 15000,
+          },
+          status: AttemptStatus.STANDARD,
+          ...whereParams,
         },
-        status: AttemptStatus.STANDARD,
-        ...whereParams,
-      },
-      include: this.attemptsInclude,
-    });
+        include: this.attemptsInclude,
+      })
+    ).filter((attempt) => !isH2hRound(attempt.result.roundId, wcif));
     const dns = await this.prisma.attempt.findMany({
       where: {
         penalty: DNS_VALUE,
@@ -1203,7 +1249,12 @@ export class ResultService {
         person: competitor,
       };
     }
-    if (lastAttempt && lastAttempt.attemptNumber === maxAttempts) {
+    // A head-to-head round has no last attempt: the bracket says who plays
+    if (
+      lastAttempt &&
+      lastAttempt.attemptNumber === maxAttempts &&
+      !isH2hRound(currentRoundId, wcif)
+    ) {
       //No attempts left
       return {
         scrambleData: {
